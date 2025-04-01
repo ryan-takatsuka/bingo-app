@@ -101,6 +101,14 @@
             }
         }
 
+        @keyframes floatAnimation {
+            0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+            25% { transform: translate(-50%, -52%) scale(1.02); filter: brightness(1.1); }
+            50% { transform: translate(-50%, -50%) scale(1.03); filter: brightness(1.2); }
+            75% { transform: translate(-50%, -48%) scale(1.01); filter: brightness(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+        }
+
         html, body {
             height: 100%;
             width: 100%;
@@ -460,7 +468,8 @@
         .confetti {
             position: fixed;
             z-index: 999;
-            animation: alienConfetti 5s ease-in-out;
+            animation: alienConfetti 5s ease-in forwards;
+            pointer-events: none; /* Ensure they don't interfere with clicks */
         }
 
         /* Abduction effect */
@@ -561,9 +570,15 @@
             z-index: 1001;
         }
 
-        .portal-alien {
-            font-size: 80px;
-            animation: alienScan 2s linear infinite;
+        .celebration-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 150px;
+            max-height: 150px;
+            filter: drop-shadow(0 0 15px var(--neon-glow));
+            z-index: 1002;
         }
 
         /* Complete board celebration */
@@ -591,7 +606,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 150px;
+            max-width: 200px;
+            max-height: 200px;
             z-index: 1002;
             filter: drop-shadow(0 0 30px var(--neon-glow));
         }
@@ -610,9 +626,70 @@
             transform-origin: center center;
         }
 
+        /* H Bingo celebration styles */
+        .h-bingo-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .h-image-wrapper {
+            position: relative;
+            width: 50%;
+            height: 50%;
+            margin-top: 2rem;
+        }
+
+        .h-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: floatAnimation 8s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px var(--neon-glow));
+        }
+
+        .h-bingo-message {
+            font-family: 'Audiowide', cursive;
+            font-size: 5rem;
+            color: var(--secondary-color);
+            text-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
+            animation: neonPulse 1s infinite;
+            text-align: center;
+            transform: rotate(-10deg);
+            z-index: 10;
+            position: relative;
+        }
+
+        @keyframes hBackgroundPulse {
+            0% { opacity: 0.1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 0.1; }
+        }
+
+        .h-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(24, 242, 178, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            animation: hBackgroundPulse 3s infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
         /* Additional adjustments for small screens */
         @media (max-width: 500px) {
-            .bingo-message {
+            .bingo-message, .h-bingo-message {
                 font-size: 3rem;
             }
 
@@ -622,12 +699,14 @@
                 border-width: 10px;
             }
 
-            .portal-alien {
-                font-size: 50px;
+            .celebration-image {
+                max-width: 100px;
+                max-height: 100px;
             }
 
             .mothership {
-                font-size: 100px;
+                max-width: 120px;
+                max-height: 120px;
             }
 
             .orbiting-alien {
@@ -637,11 +716,25 @@
             .fleet-ufo {
                 font-size: 30px;
             }
+
+            .h-image-wrapper {
+                width: 60%;
+                height: 60%;
+            }
+
+            .teleporting-alien {
+                font-size: 30px;
+            }
         }
 
         @media (max-width: 350px) {
-            .bingo-message {
+            .bingo-message, .h-bingo-message {
                 font-size: 2rem;
+            }
+
+            .h-image-wrapper {
+                width: 70%;
+                height: 70%;
             }
         }
     </style>
@@ -670,6 +763,12 @@
         <div id="mothership-container"></div>
     </div>
 
+    <!-- H bingo celebration elements -->
+    <div id="h-bingo-celebration" class="bingo-celebration">
+        <div id="h-background" class="h-background"></div>
+        <div class="h-bingo-container" id="h-bingo-container"></div>
+    </div>
+
     <!-- UFOs -->
     <div class="ufo" style="top: 15%; left: 8%;">🛸<div class="beam"></div></div>
     <div class="ufo" style="top: 25%; right: 12%; animation-delay: 2s;">🛸<div class="beam"></div></div>
@@ -679,7 +778,7 @@
     <div class="app-container">
         <div class="controls">
             <button id="randomize">🎲 Randomize 🎲</button>
-            <button id="reset" style="margin-left: 10px;">🗑️ Reset 🗑️</button>
+            <button id="reset" style="margin-left: 10px;">↩️ Reset Tiles</button>
         </div>
 
         <div class="bingo-container">
@@ -714,6 +813,7 @@
         let firstBingoTriggered = false;
         let doubleBingoTriggered = false;
         let allRevealedTriggered = false;
+        let hBingoTriggered = false;
 
         // Define a unique key for this bingo card's localStorage
         // The key includes the page URL to avoid conflicts with other bingo cards
@@ -734,6 +834,7 @@
                 firstBingoTriggered: firstBingoTriggered,
                 doubleBingoTriggered: doubleBingoTriggered,
                 allRevealedTriggered: allRevealedTriggered,
+                hBingoTriggered: hBingoTriggered,
                 previousWinningLines: previousWinningLines
             };
 
@@ -779,6 +880,7 @@
                 firstBingoTriggered = gameState.firstBingoTriggered;
                 doubleBingoTriggered = gameState.doubleBingoTriggered;
                 allRevealedTriggered = gameState.allRevealedTriggered;
+                hBingoTriggered = gameState.hBingoTriggered || false;
                 previousWinningLines = gameState.previousWinningLines || [];
 
                 return true;
@@ -788,9 +890,42 @@
             }
         }
 
-        // Clear the saved game state
-        function clearSavedState() {
-            localStorage.removeItem(STORAGE_KEY);
+        // Reset tiles to unrevealed state without changing their content
+        function resetTiles() {
+            // Show abduction effect
+            showAbduction();
+
+            // Get all tiles
+            const tiles = document.querySelectorAll('.bingo-tile');
+
+            // Reset celebration flags
+            firstBingoTriggered = false;
+            doubleBingoTriggered = false;
+            allRevealedTriggered = false;
+            hBingoTriggered = false;
+            previousWinningLines = [];
+
+            // Hide any visible celebrations
+            document.getElementById('bingo-celebration').style.opacity = '0';
+            document.getElementById('double-bingo-celebration').style.opacity = '0';
+            document.getElementById('complete-celebration').style.opacity = '0';
+            document.getElementById('h-bingo-celebration').style.opacity = '0';
+
+            // Clean up any celebration elements
+            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien, .h-image, .h-image-wrapper, .h-bingo-message, .celebration-image, .mothership').forEach(el => el.remove());
+            document.getElementById('mothership-container').innerHTML = '';
+            document.getElementById('ufo-fleet').innerHTML = '';
+            document.getElementById('h-bingo-container').innerHTML = '';
+            document.getElementById('h-background').style.opacity = '0';
+
+            // Flip all tiles back to unrevealed state
+            tiles.forEach(tile => {
+                tile.classList.remove('revealed');
+                tile.classList.remove('winning-tile');
+            });
+
+            // Save the updated state
+            saveGameState();
         }
 
         // Create star background
@@ -821,8 +956,13 @@
             for (let i = 0; i < 15; i++) {
                 const confetti = document.createElement('div');
                 confetti.classList.add('confetti');
+
+                // Position randomly across the screen width
                 confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's'; // Between 2-5s
+
+                // Generate a random animation duration between 3-5 seconds
+                const animationDuration = (Math.random() * 2 + 3); // 3-5s
+                confetti.style.animationDuration = animationDuration + 's';
 
                 // Randomly assign an alien emoji
                 const randomEmoji = alienEmojis[Math.floor(Math.random() * alienEmojis.length)];
@@ -831,10 +971,13 @@
 
                 document.body.appendChild(confetti);
 
-                // Remove confetti after animation completes
+                // Remove confetti element after animation completes
+                // Add a small buffer (500ms) to ensure animation has finished
                 setTimeout(() => {
-                    confetti.remove();
-                }, 5000);
+                    if (confetti && confetti.parentNode) {
+                        confetti.parentNode.removeChild(confetti);
+                    }
+                }, (animationDuration * 1000) + 500);
             }
         }
 
@@ -868,6 +1011,133 @@
             previousWinningLines = [...winningLines];
 
             // Save the updated state after celebration
+            saveGameState();
+        }
+
+        // Check for H bingo pattern
+        function checkForHBingo() {
+            const tiles = document.querySelectorAll('.bingo-tile');
+            const revealedTiles = Array.from(tiles).map(tile => tile.classList.contains('revealed'));
+
+            // Check left vertical column (first column)
+            let leftColumnComplete = true;
+            for (let row = 0; row < GRID_SIZE; row++) {
+                const index = row * GRID_SIZE + 0; // First column (index 0)
+                if (!revealedTiles[index]) {
+                    leftColumnComplete = false;
+                    break;
+                }
+            }
+
+            // Check right vertical column (last column)
+            let rightColumnComplete = true;
+            for (let row = 0; row < GRID_SIZE; row++) {
+                const index = row * GRID_SIZE + (GRID_SIZE - 1); // Last column
+                if (!revealedTiles[index]) {
+                    rightColumnComplete = false;
+                    break;
+                }
+            }
+
+            // Check middle horizontal row
+            const middleRow = Math.floor(GRID_SIZE / 2);
+            let middleRowComplete = true;
+            for (let col = 0; col < GRID_SIZE; col++) {
+                const index = middleRow * GRID_SIZE + col;
+                if (!revealedTiles[index]) {
+                    middleRowComplete = false;
+                    break;
+                }
+            }
+
+            // H pattern is formed when both edge columns and middle row are complete
+            return leftColumnComplete && rightColumnComplete && middleRowComplete;
+        }
+
+        // Celebrate H bingo pattern
+        function celebrateHBingo() {
+            // Set flag to prevent repeating this celebration
+            hBingoTriggered = true;
+
+            // Highlight the tiles that form the H pattern
+            const tiles = document.querySelectorAll('.bingo-tile');
+
+            // Get indices for the H pattern tiles
+            const hPatternIndices = new Set();
+
+            // Left column
+            for (let row = 0; row < GRID_SIZE; row++) {
+                hPatternIndices.add(row * GRID_SIZE + 0);
+            }
+
+            // Right column
+            for (let row = 0; row < GRID_SIZE; row++) {
+                hPatternIndices.add(row * GRID_SIZE + (GRID_SIZE - 1));
+            }
+
+            // Middle row
+            const middleRow = Math.floor(GRID_SIZE / 2);
+            for (let col = 0; col < GRID_SIZE; col++) {
+                hPatternIndices.add(middleRow * GRID_SIZE + col);
+            }
+
+            // Add winning class to tiles
+            hPatternIndices.forEach(index => {
+                tiles[index].classList.add('winning-tile');
+            });
+
+            // Show celebration overlay
+            const celebration = document.getElementById('h-bingo-celebration');
+            celebration.style.opacity = '1';
+
+            // Show background effect
+            const background = document.getElementById('h-background');
+            background.style.opacity = '1';
+
+            // Create custom H image and message
+            const container = document.getElementById('h-bingo-container');
+            container.innerHTML = '';
+
+            // Add the message on top
+            const message = document.createElement('div');
+            message.className = 'h-bingo-message';
+            message.textContent = 'H BINGO!';
+            container.appendChild(message);
+
+            // Add the image wrapper and image
+            const imageWrapper = document.createElement('div');
+            imageWrapper.className = 'h-image-wrapper';
+            container.appendChild(imageWrapper);
+
+            // Add the custom H-bingo image
+            const hImage = document.createElement('img');
+            hImage.className = 'h-image';
+            hImage.src = "data:image/png;base64,{{ h_bingo_image }}";
+            hImage.alt = "H Bingo Celebration";
+            imageWrapper.appendChild(hImage);
+
+            // Create alien confetti
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => createAlienConfetti(), i * 100);
+            }
+
+            // Hide celebration and reset UI effects after 6 seconds
+            setTimeout(() => {
+                celebration.style.opacity = '0';
+                background.style.opacity = '0';
+
+                // Remove winning class from tiles
+                hPatternIndices.forEach(index => {
+                    tiles[index].classList.remove('winning-tile');
+                });
+
+                // Clean up after hiding
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 500);
+            }, 6000);
+
+            // Save state after celebration
             saveGameState();
         }
 
@@ -951,11 +1221,17 @@
             const celebration = document.getElementById('double-bingo-celebration');
             celebration.style.opacity = '1';
 
-            // Create alien portal effect
+            // Create alien portal effect with celebration image
             const portal = document.createElement('div');
             portal.className = 'alien-portal';
-            portal.innerHTML = '<div class="portal-alien">👽</div>';
             celebration.appendChild(portal);
+
+            // Add the celebration image
+            const celebrationImg = document.createElement('img');
+            celebrationImg.className = 'celebration-image';
+            celebrationImg.src = "data:image/png;base64,{{ celebration_image }}";
+            celebrationImg.alt = "Celebration Image";
+            portal.appendChild(celebrationImg);
 
             // Create more intense alien confetti
             for (let i = 0; i < 50; i++) {
@@ -992,11 +1268,13 @@
             cosmicBg.className = 'cosmic-background';
             celebration.appendChild(cosmicBg);
 
-            // Create mothership
-            const mothership = document.createElement('div');
+            // Create mothership with celebration image
+            const mothershipContainer = document.getElementById('mothership-container');
+            const mothership = document.createElement('img');
             mothership.className = 'mothership';
-            mothership.textContent = '🛸';
-            document.getElementById('mothership-container').appendChild(mothership);
+            mothership.src = "data:image/png;base64,{{ celebration_image }}";
+            mothership.alt = "Celebration Image";
+            mothershipContainer.appendChild(mothership);
 
             // Create orbiting aliens
             const aliens = [];
@@ -1026,7 +1304,7 @@
                 // Clean up added elements
                 setTimeout(() => {
                     cosmicBg.remove();
-                    document.getElementById('mothership-container').innerHTML = '';
+                    mothershipContainer.innerHTML = '';
                     aliens.forEach(alien => alien.remove());
                     document.querySelectorAll('.orbiting-alien').forEach(el => el.remove());
                 }, 500);
@@ -1121,6 +1399,11 @@
             // Check if all tiles are revealed
             checkAllRevealed();
 
+            // Check for H bingo pattern
+            if (checkForHBingo() && !hBingoTriggered) {
+                celebrateHBingo();
+            }
+
             // Determine if there's a new bingo
             const isNewBingo = currentWinningLines.length > previousWinningLines.length;
 
@@ -1161,17 +1444,21 @@
             document.getElementById('bingo-celebration').style.opacity = '0';
             document.getElementById('double-bingo-celebration').style.opacity = '0';
             document.getElementById('complete-celebration').style.opacity = '0';
+            document.getElementById('h-bingo-celebration').style.opacity = '0';
 
             // Reset celebration flags
             firstBingoTriggered = false;
             doubleBingoTriggered = false;
             allRevealedTriggered = false;
+            hBingoTriggered = false;
             previousWinningLines = [];
 
             // Clean up any celebration elements
-            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien').forEach(el => el.remove());
+            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien, .h-image, .h-image-wrapper, .h-bingo-message, .celebration-image, .mothership').forEach(el => el.remove());
             document.getElementById('mothership-container').innerHTML = '';
             document.getElementById('ufo-fleet').innerHTML = '';
+            document.getElementById('h-bingo-container').innerHTML = '';
+            document.getElementById('h-background').style.opacity = '0';
 
             // Ensure there are enough values in the pool
             if (valuePool.length < totalTiles) {
@@ -1216,11 +1503,8 @@
             // Add event listener for randomize button
             document.getElementById('randomize').addEventListener('click', randomizeBingoCard);
 
-            // Add event listener for reset button
-            document.getElementById('reset').addEventListener('click', function() {
-                clearSavedState();
-                randomizeBingoCard();
-            });
+            // Add event listener for reset button - now just resets tiles without re-randomizing
+            document.getElementById('reset').addEventListener('click', resetTiles);
 
             // Create stars
             createStars();

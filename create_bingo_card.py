@@ -90,7 +90,7 @@ def load_jinja_template(template_path: Optional[Path] = None) -> Template:
 def get_random_bingo_items(items: List[str], free_center: bool = False, tile_size: int = 5) -> List[List[str]]:
     """Generate a randomized 2D grid of bingo items."""
     # Check that there are enough items to support the bingo tile size
-    if len(items) < tile_size**2:
+    if len(items) < tile_size ** 2:
         raise ValueError(
             f"Not enough unique items in the CSV file "
             f"for the bingo size {tile_size}x{tile_size}. "
@@ -98,7 +98,7 @@ def get_random_bingo_items(items: List[str], free_center: bool = False, tile_siz
         )
 
     # Get randomized list of items. Convert to set to ensure they are unique
-    randomized_items = random.sample(items, tile_size**2)
+    randomized_items = random.sample(items, tile_size ** 2)
 
     # Create the bingo data to fill the jinja html table
     bingo_data = []
@@ -141,11 +141,13 @@ def validate_hex_color(color: str) -> bool:
 
 
 def generate_bingo_html_card(
-    initial_items: List[List[str]],
-    all_bingo_items: List[str],
-    image_encoding: str,
-    output_file: Path,
-    background_color: str = "#f5f9ff",
+        initial_items: List[List[str]],
+        all_bingo_items: List[str],
+        image_encoding: str,
+        h_bingo_image_encoding: str,
+        celebration_image_encoding: str,
+        output_file: Path,
+        background_color: str = "#f5f9ff",
 ) -> Path:
     """Generate the HTML bingo card file using the Jinja template."""
     # Load jinja template and populate with bingo data
@@ -155,6 +157,8 @@ def generate_bingo_html_card(
             "initial_items": initial_items,
             "all_bingo_items": escape_quotes(all_bingo_items),
             "image": image_encoding,
+            "h_bingo_image": h_bingo_image_encoding,
+            "celebration_image": celebration_image_encoding,
             "N_options": len(all_bingo_items),
             "background_color": background_color,
         }
@@ -177,7 +181,19 @@ def generate_bingo_html_card(
     "--image-path",
     type=click.Path(exists=True),
     help="Path to the background image to reveal on the board",
-    default="image.png",
+    default="images/default_background.png",
+)
+@click.option(
+    "--h-bingo-image-path",
+    type=click.Path(exists=True),
+    help="Path to the image used for H-bingo celebration",
+    default="images/hexy_bald.png",
+)
+@click.option(
+    "--celebration-image-path",
+    type=click.Path(exists=True),
+    help="Path to the image used for double and super bingo celebrations",
+    default="images/rat_king.png",
 )
 @click.option("--tile-size", type=int, help="Number of rows and columns in the bingo grid", default=5)
 @click.option(
@@ -192,7 +208,6 @@ def generate_bingo_html_card(
     help="Output HTML file path",
     default="bingo.html",
 )
-# --title option removed
 @click.option(
     "--image-resolution",
     type=float,
@@ -206,14 +221,15 @@ def generate_bingo_html_card(
     default="#0a0a30",
 )
 def main(
-    csv_file: str,
-    image_path: str,
-    tile_size: int,
-    free_center: bool,
-    output: str,
-    # title parameter removed
-    image_resolution: float,
-    background_color: str,
+        csv_file: str,
+        image_path: str,
+        h_bingo_image_path: str,
+        celebration_image_path: str,
+        tile_size: int,
+        free_center: bool,
+        output: str,
+        image_resolution: float,
+        background_color: str,
 ):
     """Generate a bingo card HTML file from a CSV of tile values and a background image."""
     try:
@@ -224,6 +240,8 @@ def main(
         # Convert paths
         csv_file_path = Path(csv_file).resolve()
         image_file_path = Path(image_path).resolve()
+        h_bingo_image_file_path = Path(h_bingo_image_path).resolve()
+        celebration_image_file_path = Path(celebration_image_path).resolve()
         output_file_path = Path(output).resolve()
 
         # Load data and generate bingo card
@@ -239,13 +257,24 @@ def main(
             image_file_path, resolution_scale=image_resolution, tile_size=tile_size
         )
 
+        print(f"Loading and encoding H-bingo celebration image from {h_bingo_image_file_path}")
+        h_bingo_image_encoding = create_image_encoding_from_path(
+            h_bingo_image_file_path, resolution_scale=1.0
+        )
+
+        print(f"Loading and encoding celebration image from {celebration_image_file_path}")
+        celebration_image_encoding = create_image_encoding_from_path(
+            celebration_image_file_path, resolution_scale=1.0
+        )
+
         print(f"Generating HTML bingo card with dark theme and background color: {background_color}")
         bingo_file = generate_bingo_html_card(
             initial_items=initial_items,
             all_bingo_items=all_bingo_items,
             image_encoding=image_encoding,
+            h_bingo_image_encoding=h_bingo_image_encoding,
+            celebration_image_encoding=celebration_image_encoding,
             output_file=output_file_path,
-            # title argument removed
             background_color=background_color,
         )
 
