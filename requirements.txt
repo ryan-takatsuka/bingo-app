@@ -2,3 +2,5 @@ jinja2
 pillow
 numpy
 click
+rich
+questionary
