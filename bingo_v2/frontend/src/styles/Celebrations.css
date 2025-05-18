@@ -1,0 +1,395 @@
+/* Celebrations CSS */
+.bingo-celebration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  background: rgba(10, 10, 30, 0.95);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bingo-message {
+  position: absolute;
+  font-size: 4rem;
+  font-weight: bold;
+  color: #18f2b2;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  z-index: 10;
+  animation: messageSlide 1s ease-out;
+  text-shadow: 0 0 20px rgba(24, 242, 178, 0.8),
+               0 0 40px rgba(24, 242, 178, 0.6),
+               0 0 60px rgba(24, 242, 178, 0.4);
+}
+
+@keyframes messageSlide {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Confetti */
+.confetti-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti, .alien-confetti {
+  position: absolute;
+  animation: confettiFall 3s linear infinite;
+  font-size: 1.5rem;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Double Bingo */
+.double-bingo .cosmic-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, 
+    rgba(115, 3, 192, 0.3) 0%, 
+    rgba(181, 23, 158, 0.2) 40%, 
+    transparent 70%);
+  animation: cosmicPulse 4s ease-in-out infinite;
+}
+
+@keyframes cosmicPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.celebration-image-wrapper,
+.h-image-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: imageAppear 2s ease-out;
+}
+
+.celebration-image,
+.h-image {
+  max-width: 400px;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  transition: opacity 1s ease-out;
+}
+
+.celebration-image.loaded,
+.h-image.loaded {
+  opacity: 1;
+}
+
+@keyframes imageAppear {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.ufo-fleet {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bingo-ufo {
+  position: absolute;
+  font-size: 2rem;
+  animation: ufoFloat 8s ease-in-out infinite;
+}
+
+@keyframes ufoFloat {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  50% {
+    transform: translateY(0) translateX(-10px);
+  }
+  75% {
+    transform: translateY(20px) translateX(5px);
+  }
+}
+
+.alien-portal {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, 
+    rgba(181, 23, 158, 0.4) 0%, 
+    transparent 70%);
+  animation: portalSpin 10s linear infinite;
+}
+
+@keyframes portalSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.orbiting-alien {
+  position: absolute;
+  font-size: 2rem;
+  width: 30px;
+  height: 30px;
+  top: 50%;
+  left: 50%;
+  margin-top: -15px;
+  margin-left: -15px;
+  animation: orbitAlien 4s linear infinite;
+}
+
+@keyframes orbitAlien {
+  from {
+    transform: rotate(0deg) translateX(150px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(150px) rotate(-360deg);
+  }
+}
+
+/* H-Bingo */
+.h-bingo-celebration {
+  background: radial-gradient(circle at center, 
+    rgba(115, 3, 192, 0.4) 0%, 
+    rgba(10, 10, 30, 0.95) 50%);
+}
+
+.h-bingo-message {
+  color: #b5179e;
+  font-size: 5rem;
+  animation: hPulse 2s ease-in-out infinite;
+}
+
+@keyframes hPulse {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow: 0 0 30px rgba(181, 23, 158, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 60px rgba(181, 23, 158, 1);
+  }
+}
+
+.h-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(181, 23, 158, 0.1) 50%, 
+    transparent 70%);
+  animation: scanEffect 3s linear infinite;
+}
+
+@keyframes scanEffect {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* Super Bingo */
+.complete-celebration {
+  background: radial-gradient(circle at center,
+    rgba(24, 242, 178, 0.4) 0%,
+    rgba(115, 3, 192, 0.3) 30%,
+    rgba(10, 10, 30, 0.95) 60%);
+}
+
+.complete-celebration .bingo-message {
+  font-size: 6rem;
+  background: linear-gradient(45deg, #18f2b2, #b5179e, #7303c0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: superGlow 3s ease-in-out infinite;
+}
+
+@keyframes superGlow {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.5);
+    transform: scale(1.05);
+  }
+}
+
+.cosmic-vortex {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg at center,
+    transparent 0deg,
+    rgba(181, 23, 158, 0.3) 60deg,
+    transparent 120deg,
+    rgba(115, 3, 192, 0.3) 180deg,
+    transparent 240deg,
+    rgba(24, 242, 178, 0.3) 300deg,
+    transparent 360deg
+  );
+  animation: vortexSpin 5s linear infinite;
+  border-radius: 50%;
+}
+
+@keyframes vortexSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.mothership-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: mothershipDescend 3s ease-out;
+}
+
+.mothership {
+  max-width: 500px;
+  max-height: 500px;
+  width: auto;
+  height: auto;
+  filter: drop-shadow(0 0 30px rgba(24, 242, 178, 0.8));
+  animation: mothershipHover 6s ease-in-out infinite;
+}
+
+@keyframes mothershipDescend {
+  from {
+    transform: translate(-50%, -200%) scale(0.5);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes mothershipHover {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.mothership-beam {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 400px;
+  background: linear-gradient(to bottom,
+    rgba(24, 242, 178, 0.4) 0%,
+    rgba(24, 242, 178, 0.1) 50%,
+    transparent 100%
+  );
+  clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
+  animation: beamPulse 2s ease-in-out infinite;
+}
+
+@keyframes beamPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.super-confetti {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.alien-entity {
+  position: absolute;
+  font-size: 2rem;
+  animation: entityFloat 5s ease-in-out infinite;
+}
+
+@keyframes entityFloat {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bingo-message {
+    font-size: 3rem;
+  }
+  
+  .h-bingo-message {
+    font-size: 3.5rem;
+  }
+  
+  .complete-celebration .bingo-message {
+    font-size: 4rem;
+  }
+  
+  .celebration-image,
+  .h-image,
+  .mothership {
+    max-width: 300px;
+    max-height: 300px;
+  }
+}

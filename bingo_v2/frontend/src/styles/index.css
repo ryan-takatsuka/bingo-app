@@ -1,0 +1,201 @@
+body {
+  margin: 0;
+  font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0a0a30;
+  color: #e2fcff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Exo+2:wght@300;400;600&family=Audiowide&display=swap');
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+
+/* Enhanced grid background effect with gradient */
+body {
+  background: linear-gradient(135deg, #0a0a30 0%, #1b1b47 100%);
+  background-image:
+    radial-gradient(rgba(115, 3, 192, 0.2) 1px, transparent 1px),
+    radial-gradient(rgba(24, 242, 178, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0, 25px 25px;
+  position: relative;
+}
+
+/* Before the stars effect, add a glow overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(115, 3, 192, 0.15) 0%, transparent 30%),
+    radial-gradient(circle at 80% 70%, rgba(24, 242, 178, 0.1) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Enhanced stars effect */
+.stars {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+@keyframes stars-small {
+  0% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.3; transform: translateY(-100vh); }
+}
+
+@keyframes stars-medium {
+  0% { opacity: 0.3; transform: translateY(0) rotate(0deg); }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.3; transform: translateY(-100vh) rotate(360deg); }
+}
+
+@keyframes stars-large {
+  0% { opacity: 0.4; transform: translateY(0); }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0.4; transform: translateY(-100vh); }
+}
+
+/* Add this to index.js to create the stars dynamically */
+/*
+function createStars() {
+  const starsContainer = document.createElement('div');
+  starsContainer.classList.add('stars');
+
+  // Create small stars
+  for (let i = 0; i < 100; i++) {
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.style.width = Math.random() * 2 + 'px';
+    star.style.height = star.style.width;
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.top = Math.random() * 100 + 'vh';
+    star.style.background = '#ffffff';
+    star.style.borderRadius = '50%';
+    star.style.position = 'absolute';
+    star.style.opacity = Math.random() * 0.5 + 0.3;
+    star.style.animation = `stars-small ${Math.random() * 60 + 60}s linear infinite`;
+    star.style.animationDelay = Math.random() * 60 + 's';
+    starsContainer.appendChild(star);
+  }
+
+  // Create medium stars
+  for (let i = 0; i < 50; i++) {
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.style.width = Math.random() * 2 + 2 + 'px';
+    star.style.height = star.style.width;
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.top = Math.random() * 100 + 'vh';
+    star.style.background = '#e2fcff';
+    star.style.boxShadow = '0 0 4px #e2fcff';
+    star.style.borderRadius = '50%';
+    star.style.position = 'absolute';
+    star.style.opacity = Math.random() * 0.5 + 0.3;
+    star.style.animation = `stars-medium ${Math.random() * 90 + 90}s linear infinite`;
+    star.style.animationDelay = Math.random() * 90 + 's';
+    starsContainer.appendChild(star);
+  }
+
+  // Create large stars
+  for (let i = 0; i < 20; i++) {
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.style.width = Math.random() * 2 + 4 + 'px';
+    star.style.height = star.style.width;
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.top = Math.random() * 100 + 'vh';
+    star.style.background = '#18f2b2';
+    star.style.boxShadow = '0 0 8px #18f2b2';
+    star.style.borderRadius = '50%';
+    star.style.position = 'absolute';
+    star.style.opacity = Math.random() * 0.5 + 0.4;
+    star.style.animation = `stars-large ${Math.random() * 120 + 120}s linear infinite`;
+    star.style.animationDelay = Math.random() * 120 + 's';
+    starsContainer.appendChild(star);
+  }
+
+  document.body.appendChild(starsContainer);
+}
+
+// Call this function after the DOM is loaded
+document.addEventListener('DOMContentLoaded', createStars);
+*/
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 48, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(115, 3, 192, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(115, 3, 192, 0.8);
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(115, 3, 192, 0.7);
+  color: #e2fcff;
+}
+
+/* Links styling */
+a {
+  color: #18f2b2;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+a:hover {
+  color: #7303c0;
+  text-shadow: 0 0 8px rgba(24, 242, 178, 0.7);
+}
+
+/* Global typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Audiowide', cursive;
+  margin-bottom: 1rem;
+  color: #18f2b2;
+  text-shadow: 0 0 10px rgba(181, 23, 158, 0.5);
+}
+
+p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}

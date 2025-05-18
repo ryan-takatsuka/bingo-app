@@ -1,0 +1,37 @@
+/* Theme Variables */
+:root[data-theme="dark"] {
+  --background-color: #0a0a30;
+  --container-bg: rgba(0, 0, 0, 0.4);
+  --container-border: #7303c0;
+  --primary-color: #7303c0;
+  --secondary-color: #18f2b2;
+  --accent-color: #b5179e;
+  --text-color: #e2fcff;
+  --tile-bg: rgba(115, 3, 192, 0.6);
+  --tile-border: #b5179e;
+  --tile-revealed-text: #18f2b2;
+  --button-bg: linear-gradient(135deg, #7303c0, #b5179e);
+  --button-hover: linear-gradient(135deg, #b5179e, #7303c0);
+}
+
+:root[data-theme="light"] {
+  --background-color: #f0f0f0;
+  --container-bg: rgba(255, 255, 255, 0.9);
+  --container-border: #8a2be2;
+  --primary-color: #8a2be2;
+  --secondary-color: #20b2aa;
+  --accent-color: #da70d6;
+  --text-color: #333333;
+  --tile-bg: rgba(138, 43, 226, 0.2);
+  --tile-border: #da70d6;
+  --tile-revealed-text: #20b2aa;
+  --button-bg: linear-gradient(135deg, #8a2be2, #da70d6);
+  --button-hover: linear-gradient(135deg, #da70d6, #8a2be2);
+}
+
+/* Apply theme to body */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

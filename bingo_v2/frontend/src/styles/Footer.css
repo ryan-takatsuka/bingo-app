@@ -1,0 +1,124 @@
+.footer {
+  background: rgba(10, 10, 48, 0.8);
+  backdrop-filter: blur(15px);
+  padding: 20px 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 100;
+  margin-top: 40px;
+  border-top: 1px solid rgba(115, 3, 192, 0.3);
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  color: #e2fcff;
+  font-family: 'Exo 2', sans-serif;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+}
+
+.footer-links a {
+  color: #18f2b2;
+  text-decoration: none;
+  transition: all 0.3s;
+  margin: 0 15px;
+  position: relative;
+  font-weight: 500;
+}
+
+.footer-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background: #7303c0;
+  box-shadow: 0 0 10px rgba(181, 23, 158, 0.7);
+  transition: width 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: #7303c0;
+  text-shadow: 0 0 8px rgba(24, 242, 178, 0.7);
+}
+
+.footer-links a:hover::after {
+  width: 100%;
+}
+
+.separator {
+  color: rgba(115, 3, 192, 0.7);
+  margin: 0 5px;
+  font-size: 1.2rem;
+}
+
+/* Social media icons */
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-icon {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(115, 3, 192, 0.2);
+  color: #18f2b2;
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(181, 23, 158, 0.3);
+}
+
+.social-icon:hover {
+  background: rgba(115, 3, 192, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(181, 23, 158, 0.5);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .footer-links {
+    margin-top: 15px;
+  }
+
+  .social-icons {
+    margin-top: 15px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    font-size: 0.9rem;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-links a {
+    margin: 5px 10px;
+  }
+
+  .separator {
+    display: none;
+  }
+}
