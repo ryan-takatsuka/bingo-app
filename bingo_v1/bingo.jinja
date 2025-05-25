@@ -881,6 +881,10 @@
         let doubleBingoTriggered = false;
         let allRevealedTriggered = false;
         let hBingoTriggered = false;
+        
+        // Track active celebration timeouts
+        let activeCelebrationTimeouts = [];
+        let currentCelebration = null;
 
         // Show a status message to the user
         function showStatusMessage(message, duration = 3000) {
@@ -895,6 +899,9 @@
 
         // Reset tiles to unrevealed state without changing their content
         function resetTiles() {
+            // Cancel any active celebrations first
+            cancelActiveCelebration();
+            
             // Show abduction effect
             showAbduction();
 
@@ -908,25 +915,9 @@
             hBingoTriggered = false;
             previousWinningLines = [];
 
-            // Hide any visible celebrations
-            document.getElementById('bingo-celebration').style.opacity = '0';
-            document.getElementById('double-bingo-celebration').style.opacity = '0';
-            document.getElementById('complete-celebration').style.opacity = '0';
-            document.getElementById('h-bingo-celebration').style.opacity = '0';
-
-            // Clean up any celebration elements
-            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien, .h-image, .h-image-wrapper, .h-bingo-message').forEach(el => el.remove());
-            document.getElementById('mothership-container').innerHTML = '';
-            document.getElementById('ufo-fleet').innerHTML = '';
-            document.getElementById('h-bingo-container').innerHTML = '';
-            document.getElementById('h-background').style.opacity = '0';
-            document.getElementById('bingo-image-wrapper').innerHTML = '';
-            document.getElementById('double-bingo-image-wrapper').innerHTML = '';
-
             // Flip all tiles back to unrevealed state
             tiles.forEach(tile => {
                 tile.classList.remove('revealed');
-                tile.classList.remove('winning-tile');
             });
 
             // No state saving needed
@@ -995,10 +986,42 @@
             }, 500);
         }
 
+        // Cancel any active celebrations
+        function cancelActiveCelebration() {
+            // Clear all active timeouts
+            activeCelebrationTimeouts.forEach(timeout => clearTimeout(timeout));
+            activeCelebrationTimeouts = [];
+            
+            // Immediately hide all celebration overlays
+            document.getElementById('bingo-celebration').style.opacity = '0';
+            document.getElementById('double-bingo-celebration').style.opacity = '0';
+            document.getElementById('complete-celebration').style.opacity = '0';
+            document.getElementById('h-bingo-celebration').style.opacity = '0';
+            document.getElementById('h-background').style.opacity = '0';
+            
+            // Remove all winning tile highlights
+            document.querySelectorAll('.winning-tile').forEach(tile => {
+                tile.classList.remove('winning-tile');
+            });
+            
+            // Clean up any celebration elements
+            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien, .fleet-ufo').forEach(el => el.remove());
+            document.getElementById('ufo-fleet').innerHTML = '';
+            document.getElementById('h-bingo-container').innerHTML = '';
+            document.getElementById('bingo-image-wrapper').innerHTML = '';
+            document.getElementById('double-bingo-image-wrapper').innerHTML = '';
+            document.getElementById('mothership-container').innerHTML = '';
+            
+            currentCelebration = null;
+        }
 
         // First Bingo celebration
         function celebrateFirstBingo(winningLines) {
+            // Cancel any active celebration
+            cancelActiveCelebration();
+            
             firstBingoTriggered = true;
+            currentCelebration = 'first-bingo';
 
             // Highlight the winning tiles
             const tiles = document.querySelectorAll('.bingo-tile');
@@ -1039,7 +1062,7 @@
             }
 
             // Hide celebration and reset UI effects after 5 seconds
-            setTimeout(() => {
+            const hideTimeout = setTimeout(() => {
                 celebration.style.opacity = '0';
 
                 // Remove winning class from tiles
@@ -1048,16 +1071,26 @@
                 });
 
                 // Clean up after hiding
-                setTimeout(() => {
+                const cleanupTimeout = setTimeout(() => {
                     ufoFleet.innerHTML = '';
                     document.getElementById('bingo-image-wrapper').innerHTML = '';
                 }, 500);
+                
+                // Remove this timeout from active list
+                activeCelebrationTimeouts = activeCelebrationTimeouts.filter(t => t !== hideTimeout);
             }, 5000);
+            
+            // Track this timeout
+            activeCelebrationTimeouts.push(hideTimeout);
         }
 
         // Double Bingo celebration
         function celebrateDoubleBingo(winningLines) {
+            // Cancel any active celebration
+            cancelActiveCelebration();
+            
             doubleBingoTriggered = true;
+            currentCelebration = 'double-bingo';
 
             // Highlight the winning tiles
             const tiles = document.querySelectorAll('.bingo-tile');
@@ -1091,7 +1124,7 @@
             }
 
             // Hide celebration and reset UI effects after 6 seconds
-            setTimeout(() => {
+            const hideTimeout = setTimeout(() => {
                 celebration.style.opacity = '0';
 
                 // Remove winning class from tiles
@@ -1102,16 +1135,26 @@
                 });
 
                 // Clean up after hiding
-                setTimeout(() => {
+                const cleanupTimeout = setTimeout(() => {
                     celebration.querySelectorAll('.alien-portal').forEach(el => el.remove());
                     document.getElementById('double-bingo-image-wrapper').innerHTML = '';
                 }, 500);
+                
+                // Remove this timeout from active list
+                activeCelebrationTimeouts = activeCelebrationTimeouts.filter(t => t !== hideTimeout);
             }, 6000);
+            
+            // Track this timeout
+            activeCelebrationTimeouts.push(hideTimeout);
         }
 
         // All tiles revealed celebration
         function celebrateAllRevealed() {
+            // Cancel any active celebration
+            cancelActiveCelebration();
+            
             allRevealedTriggered = true;
+            currentCelebration = 'all-revealed';
 
             // Show the celebration overlay
             const celebration = document.getElementById('complete-celebration');
@@ -1147,15 +1190,21 @@
             }
 
             // Hide celebration and reset UI effects after 8 seconds
-            setTimeout(() => {
+            const hideTimeout = setTimeout(() => {
                 celebration.style.opacity = '0';
 
                 // Clean up after hiding
-                setTimeout(() => {
+                const cleanupTimeout = setTimeout(() => {
                     celebration.querySelectorAll('.cosmic-background, .orbiting-alien').forEach(el => el.remove());
                     document.getElementById('mothership-container').innerHTML = '';
                 }, 500);
+                
+                // Remove this timeout from active list
+                activeCelebrationTimeouts = activeCelebrationTimeouts.filter(t => t !== hideTimeout);
             }, 8000);
+            
+            // Track this timeout
+            activeCelebrationTimeouts.push(hideTimeout);
         }
 
         // Check for H bingo pattern
@@ -1200,8 +1249,12 @@
 
         // Celebrate H bingo pattern
         function celebrateHBingo() {
+            // Cancel any active celebration
+            cancelActiveCelebration();
+            
             // Set flag to prevent repeating this celebration
             hBingoTriggered = true;
+            currentCelebration = 'h-bingo';
 
             // Highlight the tiles that form the H pattern
             const tiles = document.querySelectorAll('.bingo-tile');
@@ -1266,7 +1319,7 @@
             }
 
             // Hide celebration and reset UI effects after 6 seconds
-            setTimeout(() => {
+            const hideTimeout = setTimeout(() => {
                 celebration.style.opacity = '0';
                 background.style.opacity = '0';
 
@@ -1276,12 +1329,16 @@
                 });
 
                 // Clean up after hiding
-                setTimeout(() => {
+                const cleanupTimeout = setTimeout(() => {
                     container.innerHTML = '';
                 }, 500);
+                
+                // Remove this timeout from active list
+                activeCelebrationTimeouts = activeCelebrationTimeouts.filter(t => t !== hideTimeout);
             }, 6000);
-
-            // No state saving needed
+            
+            // Track this timeout
+            activeCelebrationTimeouts.push(hideTimeout);
         }
 
         // Check if all tiles are revealed
@@ -1423,17 +1480,14 @@
             const tiles = document.querySelectorAll('.bingo-tile');
             const totalTiles = tiles.length;
 
+            // Cancel any active celebrations first
+            cancelActiveCelebration();
+
             // Create alien confetti effect
             createAlienConfetti();
 
             // Abduction effect
             showAbduction();
-
-            // Hide any visible celebrations
-            document.getElementById('bingo-celebration').style.opacity = '0';
-            document.getElementById('double-bingo-celebration').style.opacity = '0';
-            document.getElementById('complete-celebration').style.opacity = '0';
-            document.getElementById('h-bingo-celebration').style.opacity = '0';
 
             // Reset celebration flags
             firstBingoTriggered = false;
@@ -1441,15 +1495,6 @@
             allRevealedTriggered = false;
             hBingoTriggered = false;
             previousWinningLines = [];
-
-            // Clean up any celebration elements
-            document.querySelectorAll('.alien-portal, .cosmic-background, .orbiting-alien, .h-image, .h-image-wrapper, .h-bingo-message').forEach(el => el.remove());
-            document.getElementById('mothership-container').innerHTML = '';
-            document.getElementById('ufo-fleet').innerHTML = '';
-            document.getElementById('h-bingo-container').innerHTML = '';
-            document.getElementById('h-background').style.opacity = '0';
-            document.getElementById('bingo-image-wrapper').innerHTML = '';
-            document.getElementById('double-bingo-image-wrapper').innerHTML = '';
 
             // Ensure there are enough values in the pool
             if (valuePool.length < totalTiles) {
@@ -1460,10 +1505,9 @@
             // Shuffle the value pool
             const shuffledValues = [...valuePool].sort(() => Math.random() - 0.5);
 
-            // Reset all tiles to non-revealed state and remove winning-tile class
+            // Reset all tiles to non-revealed state
             tiles.forEach(tile => {
                 tile.classList.remove('revealed');
-                tile.classList.remove('winning-tile');
             });
 
             // Animate and assign values to tiles with delay
