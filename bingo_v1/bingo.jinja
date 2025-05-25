@@ -278,17 +278,6 @@
             aspect-ratio: 1 / 1; /* Ensure the card is always square */
         }
 
-        .bingo-tile {
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            border: 1px solid var(--tile-border);
-            margin: 0;
-            z-index: 2;
-            /* Base font size scaled by grid size */
-            font-size: var(--base-tile-font-size);
-        }
 
         /* Round the corners of only the outer-most tiles */
         .bingo-tile:first-child {
@@ -304,14 +293,78 @@
             border-bottom-right-radius: 8px;
         }
 
+        @keyframes borderPulse {
+            0% {
+                border-width: 1px;
+                box-shadow: 0 0 0 0 var(--secondary-color);
+            }
+            50% {
+                border-width: 3px;
+                box-shadow: 0 0 0 5px rgba(24, 242, 178, 0.3);
+            }
+            100% {
+                border-width: 1px;
+                box-shadow: 0 0 0 0 rgba(24, 242, 178, 0);
+            }
+        }
+
+        .bingo-tile {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            transform-style: preserve-3d;
+            border: 1px solid var(--tile-border);
+            margin: 0;
+            z-index: 2;
+            /* Base font size scaled by grid size */
+            font-size: var(--base-tile-font-size);
+            perspective: 1000px;
+        }
+
         .bingo-tile:hover {
-            box-shadow: 0 0 10px var(--neon-glow);
-            z-index: 5;
+            transform: rotateX(-15deg) rotateY(15deg) scale(1.02);
+            border-color: var(--secondary-color);
+            animation: borderPulse 1.5s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        .bingo-tile:hover::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color), var(--accent-color));
+            border-radius: inherit;
+            z-index: -1;
+            filter: blur(8px);
+            animation: rotateGradient 3s linear infinite;
+        }
+
+        @keyframes rotateGradient {
+            0% {
+                filter: blur(8px) hue-rotate(0deg);
+            }
+            100% {
+                filter: blur(8px) hue-rotate(360deg);
+            }
         }
 
         /* Flip animation for revealed state */
         .bingo-tile.revealed {
             transform: rotateY(180deg);
+        }
+
+        /* Subtle hover effect for revealed tiles */
+        .bingo-tile.revealed:hover {
+            transform: rotateY(180deg) scale(1.01);
+            animation: none;
+            border-color: var(--tile-border);
+        }
+
+        .bingo-tile.revealed:hover::before {
+            display: none;
         }
 
         /* Front and back faces of the tile */
