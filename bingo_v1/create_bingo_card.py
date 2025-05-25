@@ -310,7 +310,9 @@ def generate_bingo_html_card(
         all_bingo_items: List[str],
         image_encoding: str,
         h_bingo_image_encoding: str,
-        celebration_image_encoding: str,
+        bingo_image_encoding: str,
+        double_bingo_image_encoding: str,
+        super_bingo_image_encoding: str,
         output_file: Path,
         background_color: str = "#f5f9ff",
 ) -> Path:
@@ -321,7 +323,9 @@ def generate_bingo_html_card(
         all_bingo_items: List of all possible bingo items for randomization.
         image_encoding: Base64-encoded background image string.
         h_bingo_image_encoding: Base64-encoded horizontal bingo celebration image string.
-        celebration_image_encoding: Base64-encoded super bingo celebration image string.
+        bingo_image_encoding: Base64-encoded standard bingo celebration image string.
+        double_bingo_image_encoding: Base64-encoded double bingo celebration image string.
+        super_bingo_image_encoding: Base64-encoded super bingo celebration image string.
         output_file: Path where the HTML file should be saved.
         background_color: Hex color code for the background (default: '#f5f9ff').
 
@@ -336,7 +340,9 @@ def generate_bingo_html_card(
             "all_bingo_items": escape_quotes(all_bingo_items),
             "image": image_encoding,
             "h_bingo_image": h_bingo_image_encoding,
-            "celebration_image": celebration_image_encoding,
+            "bingo_image": bingo_image_encoding,
+            "double_bingo_image": double_bingo_image_encoding,
+            "super_bingo_image": super_bingo_image_encoding,
             "N_options": len(all_bingo_items),
             "background_color": background_color,
         }
@@ -394,12 +400,26 @@ def prompt_for_input(
     ).ask()
     results["h_bingo_image_path"] = h_bingo_image_path or h_bingo_image_default
 
-    celebration_image_default = str(defaults["celebration_image_path"])
-    celebration_image_path = questionary.text(
-        "Double/super bingo celebration image path (max 50KB):",
-        default=celebration_image_default
+    bingo_image_default = str(defaults["bingo_image_path"])
+    bingo_image_path = questionary.text(
+        "Standard bingo celebration image path (max 50KB):",
+        default=bingo_image_default
     ).ask()
-    results["celebration_image_path"] = celebration_image_path or celebration_image_default
+    results["bingo_image_path"] = bingo_image_path or bingo_image_default
+
+    double_bingo_image_default = str(defaults["double_bingo_image_path"])
+    double_bingo_image_path = questionary.text(
+        "Double bingo celebration image path (max 50KB):",
+        default=double_bingo_image_default
+    ).ask()
+    results["double_bingo_image_path"] = double_bingo_image_path or double_bingo_image_default
+
+    super_bingo_image_default = str(defaults["super_bingo_image_path"])
+    super_bingo_image_path = questionary.text(
+        "Super bingo celebration image path (max 50KB):",
+        default=super_bingo_image_default
+    ).ask()
+    results["super_bingo_image_path"] = super_bingo_image_path or super_bingo_image_default
 
     # Ask if tile size should be specified
     specify_tile_size = questionary.confirm(
@@ -511,9 +531,23 @@ def generate_bingo_card(
             image_type="h_bingo"
         )
 
-        celebration_image_file_path = Path(cfg["celebration_image_path"]).resolve()
-        celebration_image_encoding = create_image_encoding_from_path(
-            celebration_image_file_path,
+        bingo_image_file_path = Path(cfg["bingo_image_path"]).resolve()
+        bingo_image_encoding = create_image_encoding_from_path(
+            bingo_image_file_path,
+            no_downscaling=cfg["no_downscaling"],
+            image_type="celebration"
+        )
+
+        double_bingo_image_file_path = Path(cfg["double_bingo_image_path"]).resolve()
+        double_bingo_image_encoding = create_image_encoding_from_path(
+            double_bingo_image_file_path,
+            no_downscaling=cfg["no_downscaling"],
+            image_type="celebration"
+        )
+
+        super_bingo_image_file_path = Path(cfg["super_bingo_image_path"]).resolve()
+        super_bingo_image_encoding = create_image_encoding_from_path(
+            super_bingo_image_file_path,
             no_downscaling=cfg["no_downscaling"],
             image_type="celebration"
         )
@@ -526,7 +560,9 @@ def generate_bingo_card(
             all_bingo_items=all_bingo_items,
             image_encoding=image_encoding,
             h_bingo_image_encoding=h_bingo_image_encoding,
-            celebration_image_encoding=celebration_image_encoding,
+            bingo_image_encoding=bingo_image_encoding,
+            double_bingo_image_encoding=double_bingo_image_encoding,
+            super_bingo_image_encoding=super_bingo_image_encoding,
             output_file=output_with_size,
             background_color=cfg["background_color"],
         )
@@ -585,9 +621,21 @@ def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> Non
     default=None,
 )
 @click.option(
-    "--celebration-image-path",
+    "--bingo-image-path",
     type=click.Path(),
-    help="Path to the image used for double and super bingo celebrations (max 50KB)",
+    help="Path to the image used for standard bingo celebration (max 50KB)",
+    default=None,
+)
+@click.option(
+    "--double-bingo-image-path",
+    type=click.Path(),
+    help="Path to the image used for double bingo celebration (max 50KB)",
+    default=None,
+)
+@click.option(
+    "--super-bingo-image-path",
+    type=click.Path(),
+    help="Path to the image used for super bingo celebration (max 50KB)",
     default=None,
 )
 @click.option(
@@ -630,7 +678,9 @@ def main(
         csv_file: Optional[str],
         image_path: Optional[str],
         h_bingo_image_path: Optional[str],
-        celebration_image_path: Optional[str],
+        bingo_image_path: Optional[str],
+        double_bingo_image_path: Optional[str],
+        super_bingo_image_path: Optional[str],
         tile_size: Optional[int],
         free_center: Optional[bool],
         output: Optional[str],
@@ -644,7 +694,9 @@ def main(
         csv_file: Path to the CSV file with bingo tile values.
         image_path: Path to the background image to reveal on the board.
         h_bingo_image_path: Path to the image used for H-bingo celebration.
-        celebration_image_path: Path to the image used for double/super bingo celebrations.
+        bingo_image_path: Path to the image used for standard bingo celebration.
+        double_bingo_image_path: Path to the image used for double bingo celebration.
+        super_bingo_image_path: Path to the image used for super bingo celebration.
         tile_size: Number of rows and columns in the bingo grid.
         free_center: Whether to set the center tile as FREE.
         output: Output HTML file path.
@@ -657,7 +709,9 @@ def main(
         "csv_file": "Bingo Tiles.csv",
         "image_path": "images/default_background.png",
         "h_bingo_image_path": "images/hexy_bald.png",
-        "celebration_image_path": "images/rat_king.png",
+        "bingo_image_path": "images/rat_king.png",
+        "double_bingo_image_path": "images/rat_king.png",
+        "super_bingo_image_path": "images/god_gamer.png",
         "tile_size": 5,
         "free_center": False,
         "output": "bingo.html",
@@ -680,7 +734,9 @@ def main(
             "csv_file": csv_file or defaults["csv_file"],
             "image_path": image_path or defaults["image_path"],
             "h_bingo_image_path": h_bingo_image_path or defaults["h_bingo_image_path"],
-            "celebration_image_path": celebration_image_path or defaults["celebration_image_path"],
+            "bingo_image_path": bingo_image_path or defaults["bingo_image_path"],
+            "double_bingo_image_path": double_bingo_image_path or defaults["double_bingo_image_path"],
+            "super_bingo_image_path": super_bingo_image_path or defaults["super_bingo_image_path"],
             "tile_size": tile_size if tile_size is not None else defaults["tile_size"],
             "free_center": free_center if free_center is not None else defaults["free_center"],
             "output": output or defaults["output"],
@@ -695,8 +751,12 @@ def main(
             defaults["image_path"] = image_path
         if h_bingo_image_path:
             defaults["h_bingo_image_path"] = h_bingo_image_path
-        if celebration_image_path:
-            defaults["celebration_image_path"] = celebration_image_path
+        if bingo_image_path:
+            defaults["bingo_image_path"] = bingo_image_path
+        if double_bingo_image_path:
+            defaults["double_bingo_image_path"] = double_bingo_image_path
+        if super_bingo_image_path:
+            defaults["super_bingo_image_path"] = super_bingo_image_path
         if tile_size is not None:
             defaults["tile_size"] = tile_size
         if free_center is not None:
