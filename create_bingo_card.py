@@ -10,6 +10,8 @@ from PIL import Image
 from io import BytesIO
 import os
 import questionary
+import subprocess
+import sys
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
@@ -701,6 +703,12 @@ def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> Non
     help="Theme to use for the bingo card (alien or ghost)",
     default="alien",
 )
+@click.option(
+    "--update",
+    is_flag=True,
+    help="Update the bingo-card-generator package by pulling latest changes from git repository",
+    default=False,
+)
 def main(
         csv_file: Optional[str],
         image_path: Optional[str],
@@ -715,6 +723,7 @@ def main(
         background_color: Optional[str],
         no_interactive: bool,
         theme: str,
+        update: bool,
 ):
     """Generate a bingo card HTML file from a CSV of tile values and a background image.
 
@@ -732,7 +741,80 @@ def main(
         background_color: Hex color for the background and tiles.
         no_interactive: Whether to skip interactive prompts and use defaults.
         theme: Theme to use for the bingo card (alien or ghost).
+        update: Whether to update the package by pulling latest changes from git repository.
     """
+    # Handle update option first
+    if update:
+        console.print(Panel.fit(
+            Text("🔄 UPDATING BINGO CARD GENERATOR", justify="center"),
+            border_style="bright_blue"
+        ))
+        
+        try:
+            # Find the installation directory of the package
+            import bingo_card_generator
+            package_path = Path(bingo_card_generator.__file__).parent
+        except ImportError:
+            # Fallback: try to find the git repository in current directory or parents
+            current_path = Path.cwd()
+            package_path = None
+            
+            # Check current directory and parents for .git directory
+            for path in [current_path] + list(current_path.parents):
+                if (path / '.git').exists():
+                    # Check if this looks like the bingo-app repository
+                    if (path / 'create_bingo_card.py').exists() or (path / 'setup.py').exists():
+                        package_path = path
+                        break
+            
+            if package_path is None:
+                console.print("[red]❌ Could not locate bingo-app git repository.[/]")
+                console.print("[yellow]💡 Make sure you're running this from within the bingo-app directory or that the package is properly installed.[/]")
+                return
+        
+        console.print(f"📁 Found repository at: {package_path}")
+        
+        # Check if it's a git repository
+        git_dir = package_path / '.git'
+        if not git_dir.exists():
+            console.print("[red]❌ Directory is not a git repository.[/]")
+            return
+        
+        # Run git pull
+        try:
+            console.print("🔄 Pulling latest changes...")
+            result = subprocess.run(
+                ['git', 'pull'],
+                cwd=package_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            console.print("[green]✅ Successfully updated the repository![/]")
+            if result.stdout.strip():
+                console.print(f"Git output: {result.stdout.strip()}")
+            
+            # Reinstall the package to pick up any changes
+            console.print("📦 Reinstalling package...")
+            subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-e', '.'],
+                cwd=package_path,
+                check=True
+            )
+            console.print("[green]✅ Package reinstalled successfully![/]")
+            
+        except subprocess.CalledProcessError as e:
+            console.print(f"[red]❌ Error updating repository: {e}[/]")
+            if e.stdout:
+                console.print(f"Output: {e.stdout}")
+            if e.stderr:
+                console.print(f"Error: {e.stderr}")
+        except Exception as e:
+            console.print(f"[red]❌ Unexpected error: {e}[/]")
+        
+        return
+    
     # Get theme configuration
     theme_config = get_theme(theme)
     
