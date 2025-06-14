@@ -113,6 +113,32 @@ To use a theme, add the `--theme` option:
 python create_bingo_card.py --theme ghost
 ```
 
+## Updating Google Sites
+
+After generating your bingo cards, follow these steps to update the Google Sites page:
+
+1. **Generate the bingo HTML files**
+   ```bash
+   python create_bingo_card.py
+   ```
+   This will create your bingo HTML files (e.g., `bingo_5x5.html` and `bingo_7x7.html`)
+
+2. **Go to Google Sites**
+   - Navigate to https://sites.google.com
+   - Click on "Spooky Saturday Bingo"
+
+3. **Update the 5×5 bingo card**
+   - Open the `bingo_5x5.html` file in a text editor
+   - Select all content (Ctrl+A or Cmd+A) and copy it
+   - On the Google Sites page, click on the 5×5 bingo card element to select it
+   - Click the edit button (pencil icon)
+   - Delete all existing content in the embed element
+   - Paste the copied HTML content
+   - Click "Insert" or "Update" to save
+
+4. **Update the 7×7 bingo card**
+   - Repeat step 3 for the `bingo_7x7.html` file and the bigger bingo tab/element
+
 ## Notes
 
 - If you don't specify a tile size, the script will automatically generate both 5×5 and 7×7 cards
