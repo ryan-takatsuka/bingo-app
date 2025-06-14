@@ -15,6 +15,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from rich.table import Table
 from rich.text import Text
+from themes import get_theme, list_themes
 
 # Initialize rich console
 console = Console()
@@ -315,6 +316,7 @@ def generate_bingo_html_card(
         super_bingo_image_encoding: str,
         output_file: Path,
         background_color: str = "#f5f9ff",
+        theme_config: Optional[Dict[str, Any]] = None,
 ) -> Path:
     """Generate the HTML bingo card file using the Jinja template.
 
@@ -328,14 +330,30 @@ def generate_bingo_html_card(
         super_bingo_image_encoding: Base64-encoded super bingo celebration image string.
         output_file: Path where the HTML file should be saved.
         background_color: Hex color code for the background (default: '#f5f9ff').
+        theme_config: Optional theme configuration dictionary.
 
     Returns:
         Path to the generated HTML file.
     """
     # Load jinja template and populate with bingo data
     template = load_jinja_template()
-    html_str = template.render(
-        {
+    
+    # If theme config is provided, use theme colors, otherwise use defaults
+    if theme_config:
+        template_data = {
+            "initial_items": initial_items,
+            "all_bingo_items": escape_quotes(all_bingo_items),
+            "image": image_encoding,
+            "h_bingo_image": h_bingo_image_encoding,
+            "bingo_image": bingo_image_encoding,
+            "double_bingo_image": double_bingo_image_encoding,
+            "super_bingo_image": super_bingo_image_encoding,
+            "N_options": len(all_bingo_items),
+            "background_color": theme_config["colors"]["background"],
+            "theme": theme_config,
+        }
+    else:
+        template_data = {
             "initial_items": initial_items,
             "all_bingo_items": escape_quotes(all_bingo_items),
             "image": image_encoding,
@@ -346,7 +364,8 @@ def generate_bingo_html_card(
             "N_options": len(all_bingo_items),
             "background_color": background_color,
         }
-    )
+    
+    html_str = template.render(template_data)
 
     # Write output html file
     with output_file.open(mode="w", encoding="utf-8") as f:
@@ -474,7 +493,8 @@ def prompt_for_input(
 
 def generate_bingo_card(
         cfg: Dict[str, Any],
-        tile_size: int
+        tile_size: int,
+        theme_config: Optional[Dict[str, Any]] = None
 ) -> Path:
     """
     Generate a single bingo card with the specified tile size.
@@ -565,6 +585,7 @@ def generate_bingo_card(
             super_bingo_image_encoding=super_bingo_image_encoding,
             output_file=output_with_size,
             background_color=cfg["background_color"],
+            theme_config=theme_config,
         )
         progress.advance(main_task)
 
@@ -674,6 +695,12 @@ def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> Non
     help="Skip interactive prompts and use specified arguments + defaults",
     default=False,
 )
+@click.option(
+    "--theme",
+    type=click.Choice(list_themes()),
+    help="Theme to use for the bingo card (alien or ghost)",
+    default="alien",
+)
 def main(
         csv_file: Optional[str],
         image_path: Optional[str],
@@ -687,6 +714,7 @@ def main(
         no_down_scaling: bool,
         background_color: Optional[str],
         no_interactive: bool,
+        theme: str,
 ):
     """Generate a bingo card HTML file from a CSV of tile values and a background image.
 
@@ -703,7 +731,11 @@ def main(
         no_down_scaling: Whether to disable automatic image scaling.
         background_color: Hex color for the background and tiles.
         no_interactive: Whether to skip interactive prompts and use defaults.
+        theme: Theme to use for the bingo card (alien or ghost).
     """
+    # Get theme configuration
+    theme_config = get_theme(theme)
+    
     # Default values
     defaults = {
         "csv_file": "Bingo Tiles.csv",
@@ -716,12 +748,13 @@ def main(
         "free_center": False,
         "output": "bingo.html",
         "no_downscaling": no_down_scaling,
-        "background_color": "#0a0a30",
+        # Use theme background color as default, but CLI argument will override this
+        "background_color": background_color if background_color else theme_config["colors"]["background"],
     }
-
-    # Print welcome banner
+    
+    # Print welcome banner with theme name
     console.print(Panel.fit(
-        Text("🎮 BINGO CARD GENERATOR 🎲", justify="center"),
+        Text(f"🎮 BINGO CARD GENERATOR 🎲\n{theme_config['name']} Theme", justify="center"),
         border_style="bright_blue"
     ))
 
@@ -805,7 +838,7 @@ def main(
         generated_files = []
         for size in tile_sizes_to_generate:
             console.print(f"\n[bold]Generating {size}x{size} bingo card...[/]")
-            bingo_file = generate_bingo_card(inputs, size)
+            bingo_file = generate_bingo_card(inputs, size, theme_config)
             generated_files.append(bingo_file)
 
         # Show summary

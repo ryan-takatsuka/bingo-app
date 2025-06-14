@@ -67,6 +67,8 @@ Generate a bingo card HTML file from a CSV of tile values and a background image
 | `--output` | TEXT | Output HTML file path (will be appended with _5x5 or _7x7 if tile-size is not specified) |
 | `--no-down-scaling` | FLAG | Disable automatic image scaling (images > 250KB will be scaled down by default) |
 | `--background-color` | TEXT | Hex color for the background and tiles (e.g. #0a0a30) |
+| `--theme` | TEXT | Theme to use (alien or ghost) - default: alien |
+| `--no-interactive` | FLAG | Skip interactive prompts and use specified arguments + defaults |
 | `--help` | FLAG | Show this message and exit |
 
 ## Examples
@@ -83,8 +85,37 @@ Generate a custom 7×7 bingo card with a background image:
 python create_bingo_card.py --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
 ```
 
+Generate a ghost hunt themed bingo card:
+
+```bash
+python create_bingo_card.py --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
+```
+
+## Themes
+
+The bingo card generator supports multiple themes:
+
+### Alien Theme (Default)
+- Space/alien themed with purple and cyan colors
+- UFO and alien emojis
+- Neon glow effects
+- Messages: "BINGO!", "DOUBLE BINGO!", "H BINGO!", "You are a God Gamer"
+
+### Ghost Theme
+- Spooky ghost hunt theme with dark purple and orange colors
+- Ghost, bat, and pumpkin emojis
+- Eerie font styles (Creepster, Nosifer, Eater)
+- Messages: "GHOST CAPTURED!", "DOUBLE CAPTURE!", "HAUNTED PATTERN!", "Master Ghost Hunter!"
+
+To use a theme, add the `--theme` option:
+
+```bash
+python create_bingo_card.py --theme ghost
+```
+
 ## Notes
 
 - If you don't specify a tile size, the script will automatically generate both 5×5 and 7×7 cards
 - The FREE center option only works with odd-numbered tile sizes (5×5, 7×7, etc.)
 - Large background images (>250KB) will be automatically scaled down unless you use the `--no-down-scaling` option
+- Themes automatically set appropriate colors, fonts, and messages - you can still override the background color with `--background-color`

@@ -6,9 +6,31 @@
     <title>Bingo</title> <!-- Changed from {{ title }} -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {% if theme %}
+    {% if theme.name == "Ghost Hunt" %}
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Eater&display=swap" rel="stylesheet">
+    {% else %}
+    <link href="https://fonts.googleapis.com/css2?family={{ theme.fonts.primary }}:wght@400;700&family={{ theme.fonts.secondary }}:wght@300;600&family={{ theme.fonts.accent }}&display=swap" rel="stylesheet">
+    {% endif %}
+    {% else %}
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;600&family=Audiowide&display=swap" rel="stylesheet">
+    {% endif %}
     <style>
         :root {
+            {% if theme %}
+            /* {{ theme.name }} theme */
+            --bg-color: {{ theme.colors.background }};
+            --card-bg: {{ theme.colors.background }};
+            --text-color: {{ theme.colors.text }};
+            --primary-color: {{ theme.colors.primary }};
+            --secondary-color: {{ theme.colors.secondary }};
+            --accent-color: {{ theme.colors.accent }};
+            --tile-bg: {{ theme.colors.tile_bg }};
+            --tile-border: {{ theme.colors.tile_border }};
+            --tile-revealed-text: {{ theme.colors.tile_revealed_text }};
+            --neon-glow: {{ theme.colors.neon_glow }};
+            --grid-color: {{ theme.colors.grid }};
+            {% else %}
             /* Dark mode variables with alien theme - default theme */
             --bg-color: {{ background_color }};
             --card-bg: {{ background_color }};
@@ -21,6 +43,7 @@
             --tile-revealed-text: #ffffff;
             --neon-glow: rgba(181, 23, 158, 0.7);
             --grid-color: rgba(115, 3, 192, 0.3);
+            {% endif %}
             /* Add a dynamic tile font size variable based on grid size */
             --base-tile-font-size: calc((1em / {{ initial_items|length }}) * 5);
         }
@@ -117,7 +140,7 @@
         }
 
         body {
-            font-family: 'Exo 2', sans-serif;
+            font-family: {% if theme %}'{{ theme.fonts.secondary }}'{% else %}'Exo 2'{% endif %}, sans-serif;
             background: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -175,7 +198,7 @@
 
         button {
             padding: 10px 20px;
-            font-family: 'Orbitron', sans-serif;
+            font-family: {% if theme %}'{{ theme.fonts.primary }}'{% else %}'Orbitron'{% endif %}, sans-serif;
             font-size: 16px;
             font-weight: 600;
             border: none;
@@ -429,8 +452,8 @@
             z-index: 1000;
             display: none;
             text-align: center;
-            font-family: 'Orbitron', sans-serif;
-            box-shadow: 0 0 15px var(--neon-glow);
+            font-family: {% if theme %}'{{ theme.fonts.primary }}'{% else %}'Orbitron'{% endif %}, sans-serif;
+            box-shadow: 0 0 15px var(--neon_glow);
         }
 
         /* Responsive design improvements */
@@ -628,7 +651,7 @@
         }
 
         .bingo-message {
-            font-family: 'Audiowide', cursive;
+            font-family: {% if theme %}'{{ theme.fonts.accent }}'{% else %}'Audiowide'{% endif %}, cursive;
             font-size: 5rem;
             color: var(--secondary-color);
             text-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
@@ -764,7 +787,7 @@
         }
 
         .h-bingo-message {
-            font-family: 'Audiowide', cursive;
+            font-family: {% if theme %}'{{ theme.fonts.accent }}'{% else %}'Audiowide'{% endif %}, cursive;
             font-size: 5rem;
             color: var(--secondary-color);
             text-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
@@ -858,16 +881,23 @@
     <div id="status-message" class="status-message"></div>
 
 
-    <!-- UFOs -->
+    <!-- Decorations -->
+    {% if theme %}
+    <div class="ufo" style="top: 15%; left: 8%;">{{ theme.emojis.decorations[0] }}<div class="beam"></div></div>
+    <div class="ufo" style="top: 25%; right: 12%; animation-delay: 2s;">{{ theme.emojis.decorations[0] }}<div class="beam"></div></div>
+    <div class="ufo" style="bottom: 20%; left: 10%; animation-delay: 4s;">{{ theme.emojis.decorations[1] }}</div>
+    <div class="ufo" style="bottom: 30%; right: 15%; animation-delay: 6s;">{{ theme.emojis.decorations[1] }}</div>
+    {% else %}
     <div class="ufo" style="top: 15%; left: 8%;">🛸<div class="beam"></div></div>
     <div class="ufo" style="top: 25%; right: 12%; animation-delay: 2s;">🛸<div class="beam"></div></div>
     <div class="ufo" style="bottom: 20%; left: 10%; animation-delay: 4s;">👽</div>
     <div class="ufo" style="bottom: 30%; right: 15%; animation-delay: 6s;">👽</div>
+    {% endif %}
 
     <div class="app-container">
         <div class="controls">
-            <button id="randomize">🎲 Randomize 🎲</button>
-            <button id="reset" style="margin-left: 10px;">↩️ Reset Tiles</button>
+            <button id="randomize">{% if theme %}{{ theme.emojis.button_randomize }}{% else %}🎲{% endif %} Randomize {% if theme %}{{ theme.emojis.button_randomize }}{% else %}🎲{% endif %}</button>
+            <button id="reset" style="margin-left: 10px;">{% if theme %}{{ theme.emojis.button_reset }}{% else %}↩️{% endif %} Reset Tiles</button>
         </div>
 
         <div class="bingo-container">
@@ -889,7 +919,7 @@
             <!-- Bingo celebration overlay -->
             <div id="bingo-celebration" class="bingo-celebration">
                 <div class="standard-celebration-container">
-                    <div class="bingo-message">BINGO!</div>
+                    <div class="bingo-message">{% if theme %}{{ theme.messages.bingo }}{% else %}BINGO!{% endif %}</div>
                     <div class="celebration-image-wrapper" id="bingo-image-wrapper"></div>
                 </div>
                 <div id="ufo-fleet" class="ufo-fleet"></div>
@@ -898,7 +928,7 @@
             <!-- Double bingo celebration elements -->
             <div id="double-bingo-celebration" class="bingo-celebration">
                 <div class="standard-celebration-container">
-                    <div class="bingo-message">DOUBLE BINGO!</div>
+                    <div class="bingo-message">{% if theme %}{{ theme.messages.double_bingo }}{% else %}DOUBLE BINGO!{% endif %}</div>
                     <div class="celebration-image-wrapper" id="double-bingo-image-wrapper"></div>
                 </div>
             </div>
@@ -906,7 +936,7 @@
             <!-- Complete board celebration elements -->
             <div id="complete-celebration" class="bingo-celebration">
                 <div class="standard-celebration-container">
-                    <div class="bingo-message">You are a God Gamer</div>
+                    <div class="bingo-message">{% if theme %}{{ theme.messages.super_bingo }}{% else %}You are a God Gamer{% endif %}</div>
                     <div class="celebration-image-wrapper" id="mothership-container"></div>
                 </div>
             </div>
@@ -996,10 +1026,14 @@
             }
         }
 
-        // Create alien confetti effect
+        // Create confetti effect
         function createAlienConfetti() {
-            // Alien emojis for confetti
+            // Emojis for confetti
+            {% if theme %}
+            const alienEmojis = {{ theme.emojis.confetti|tojson }};
+            {% else %}
             const alienEmojis = ['🛸', '👽', '🌠', '🌌', '💫', '✨', '⭐', '🪐', '🔭', '🚀'];
+            {% endif %}
 
             for (let i = 0; i < 15; i++) {
                 const confetti = document.createElement('div');
@@ -1093,7 +1127,7 @@
             for (let i = 0; i < 5; i++) {
                 const ufo = document.createElement('div');
                 ufo.className = 'fleet-ufo';
-                ufo.textContent = '🛸';
+                ufo.textContent = {% if theme %}'{{ theme.emojis.decorations[0] }}'{% else %}'🛸'{% endif %};
                 ufo.style.top = `${20 + (i * 15)}%`;
                 ufo.style.animationDuration = `${8 + (Math.random() * 4)}s`;
                 ufo.style.animationDelay = `${i * 0.5}s`;
@@ -1231,7 +1265,7 @@
             for (let i = 0; i < 8; i++) {
                 const alien = document.createElement('div');
                 alien.className = 'orbiting-alien';
-                alien.textContent = i % 2 === 0 ? '👽' : '🛸';
+                alien.textContent = i % 2 === 0 ? {% if theme %}'{{ theme.emojis.decorations[1] }}'{% else %}'👽'{% endif %} : {% if theme %}'{{ theme.emojis.decorations[0] }}'{% else %}'🛸'{% endif %};
                 alien.style.animation = `orbitingAlien ${5 + (i * 0.5)}s linear infinite`;
                 alien.style.animationDelay = `${i * 0.2}s`;
                 celebration.appendChild(alien);
@@ -1351,7 +1385,7 @@
             // Add the message on top
             const message = document.createElement('div');
             message.className = 'h-bingo-message';
-            message.textContent = 'H BINGO!';
+            message.textContent = {% if theme %}'{{ theme.messages.h_bingo }}'{% else %}'H BINGO!'{% endif %};
             container.appendChild(message);
 
             // Add the image wrapper and image
