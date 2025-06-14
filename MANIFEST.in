@@ -1,0 +1,7 @@
+include README.md
+include requirements.txt
+include bingo.jinja
+include *.csv
+recursive-include images *
+global-exclude __pycache__
+global-exclude *.py[co]

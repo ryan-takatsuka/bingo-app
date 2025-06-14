@@ -2,11 +2,33 @@
 
 A customizable bingo card generator that creates interactive HTML bingo cards from CSV data with background images and celebration effects.
 
-## Environment Setup
+## Installation
+
+### Option 1: Pip Install (Recommended)
+
+Install the bingo card generator as a Python package:
+
+```bash
+# Install from the current directory
+pip install .
+
+# Or install in development mode if you plan to modify the code
+pip install -e .
+```
+
+After installation, you can use these commands from anywhere:
+
+```bash
+# Generate bingo cards
+create-bingo-card
+
+# Alternative command (same functionality)
+create-spooky-bingo
+```
+
+### Option 2: Environment Setup (Development)
 
 This application requires Python 3.11. We recommend using Conda to manage your environment.
-
-### Setting Up the Conda Environment
 
 #### If you don't have the environment yet:
 
@@ -30,25 +52,44 @@ conda activate bingo-app
 
 ## Running the Bingo Card Generator
 
-Once your environment is activated, you can run the bingo card generator script:
+### If you installed via pip:
 
 ```bash
+# Use the CLI command
+create-bingo-card
+
+# Or use the alias
+create-spooky-bingo
+```
+
+### If you're running from source:
+
+```bash
+# Run the Python script directly
 python create_bingo_card.py
 ```
 
 ### Usage Options
 
-You can run the script in two ways:
+You can run the generator in two ways:
 
-1. **Interactive Mode**: Run the script with no arguments, and the CLI will walk you through all configuration options.
+1. **Interactive Mode**: Run the command with no arguments, and the CLI will walk you through all configuration options.
 
     ```bash
+    # If installed via pip
+    create-bingo-card
+    
+    # If running from source
     python create_bingo_card.py
     ```
 
 2. **Command-line Arguments**: Provide specific options directly as arguments.
 
     ```bash
+    # If installed via pip
+    create-bingo-card --csv-file my_tiles.csv --image-path background.jpg
+    
+    # If running from source
     python create_bingo_card.py --csv-file my_tiles.csv --image-path background.jpg
     ```
 
@@ -76,18 +117,30 @@ Generate a bingo card HTML file from a CSV of tile values and a background image
 Generate a standard 5×5 bingo card with a free center:
 
 ```bash
+# If installed via pip
+create-bingo-card --csv-file data/my_terms.csv --free-center --output my_bingo_card
+
+# If running from source
 python create_bingo_card.py --csv-file data/my_terms.csv --free-center --output my_bingo_card
 ```
 
 Generate a custom 7×7 bingo card with a background image:
 
 ```bash
+# If installed via pip
+create-bingo-card --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
+
+# If running from source
 python create_bingo_card.py --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
 ```
 
 Generate a ghost hunt themed bingo card:
 
 ```bash
+# If installed via pip
+create-spooky-bingo --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
+
+# If running from source
 python create_bingo_card.py --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
 ```
 
@@ -119,6 +172,10 @@ After generating your bingo cards, follow these steps to update the Google Sites
 
 1. **Generate the bingo HTML files**
    ```bash
+   # If installed via pip
+   create-bingo-card
+   
+   # If running from source
    python create_bingo_card.py
    ```
    This will create your bingo HTML files (e.g., `bingo_5x5.html` and `bingo_7x7.html`)
