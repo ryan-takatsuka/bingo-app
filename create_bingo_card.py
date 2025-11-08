@@ -12,6 +12,7 @@ import os
 import questionary
 import subprocess
 import sys
+import shlex
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
@@ -21,6 +22,40 @@ from themes import get_theme, list_themes
 
 # Initialize rich console
 console = Console()
+
+
+def normalize_path(path_string: str) -> str:
+    """
+    Normalize a path string by handling escaped spaces and shell-style quotes.
+
+    This function processes path strings that may contain:
+    - Escaped spaces (e.g., "Photos\ Library")
+    - Quoted paths (e.g., '"My Documents"')
+    - Tilde expansion (e.g., "~/Documents")
+
+    Args:
+        path_string: Raw path string from user input
+
+    Returns:
+        Normalized path string suitable for Path() constructor
+    """
+    if not path_string:
+        return path_string
+
+    # Expand user home directory
+    path_string = os.path.expanduser(path_string)
+
+    # Use shlex to properly parse shell-style escaping and quotes
+    # This handles both escaped spaces and quoted strings
+    try:
+        # shlex.split handles escaped spaces and quotes properly
+        parsed = shlex.split(path_string)
+        # If parsing succeeds, join the parts (usually just one element for a path)
+        return ' '.join(parsed)
+    except ValueError:
+        # If shlex parsing fails (e.g., unclosed quotes), fall back to simple replacement
+        # This handles the case of backslash-escaped spaces
+        return path_string.replace('\\ ', ' ')
 
 
 def load_bingo_data(csv_file_path: Path) -> List[str]:
@@ -509,7 +544,7 @@ def generate_bingo_card(
         Path to the generated HTML file.
     """
     # Prepare output filename with tile size suffix
-    base_output = Path(cfg["output"])
+    base_output = Path(normalize_path(cfg["output"]))
     stem = base_output.stem
     suffix = base_output.suffix
     output_with_size = base_output.parent / f"{stem}_{tile_size}x{tile_size}{suffix}"
@@ -526,7 +561,7 @@ def generate_bingo_card(
 
         # Load data
         progress.update(main_task, description=f"Loading bingo values from {cfg['csv_file']}")
-        csv_file_path = Path(cfg["csv_file"]).resolve()
+        csv_file_path = Path(normalize_path(cfg["csv_file"])).resolve()
         all_bingo_items = load_bingo_data(csv_file_path)
         progress.advance(main_task)
 
@@ -537,7 +572,7 @@ def generate_bingo_card(
 
         # Process images
         progress.update(main_task, description="Processing background image")
-        image_file_path = Path(cfg["image_path"]).resolve()
+        image_file_path = Path(normalize_path(cfg["image_path"])).resolve()
         image_encoding = create_image_encoding_from_path(
             image_file_path,
             no_downscaling=cfg["no_downscaling"],
@@ -546,28 +581,28 @@ def generate_bingo_card(
         )
 
         progress.update(main_task, description="Processing celebration images (max 50KB)")
-        h_bingo_image_file_path = Path(cfg["h_bingo_image_path"]).resolve()
+        h_bingo_image_file_path = Path(normalize_path(cfg["h_bingo_image_path"])).resolve()
         h_bingo_image_encoding = create_image_encoding_from_path(
             h_bingo_image_file_path,
             no_downscaling=cfg["no_downscaling"],
             image_type="h_bingo"
         )
 
-        bingo_image_file_path = Path(cfg["bingo_image_path"]).resolve()
+        bingo_image_file_path = Path(normalize_path(cfg["bingo_image_path"])).resolve()
         bingo_image_encoding = create_image_encoding_from_path(
             bingo_image_file_path,
             no_downscaling=cfg["no_downscaling"],
             image_type="celebration"
         )
 
-        double_bingo_image_file_path = Path(cfg["double_bingo_image_path"]).resolve()
+        double_bingo_image_file_path = Path(normalize_path(cfg["double_bingo_image_path"])).resolve()
         double_bingo_image_encoding = create_image_encoding_from_path(
             double_bingo_image_file_path,
             no_downscaling=cfg["no_downscaling"],
             image_type="celebration"
         )
 
-        super_bingo_image_file_path = Path(cfg["super_bingo_image_path"]).resolve()
+        super_bingo_image_file_path = Path(normalize_path(cfg["super_bingo_image_path"])).resolve()
         super_bingo_image_encoding = create_image_encoding_from_path(
             super_bingo_image_file_path,
             no_downscaling=cfg["no_downscaling"],
@@ -890,7 +925,7 @@ def main(
             raise ValueError(f"Invalid hex color format: {inputs['background_color']}. Please use format like #0a0a30")
 
         # Convert paths
-        csv_file_path = Path(inputs["csv_file"]).resolve()
+        csv_file_path = Path(normalize_path(inputs["csv_file"])).resolve()
 
         # Load bingo items (needed to check if we have enough for the requested tile sizes)
         console.print(f"[bold]Loading bingo values from[/] [cyan]{csv_file_path}[/]")

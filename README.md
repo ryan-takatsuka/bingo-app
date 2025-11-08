@@ -4,69 +4,74 @@ A customizable bingo card generator that creates interactive HTML bingo cards fr
 
 ## Installation
 
-### Option 1: Pip Install (Recommended)
+### Prerequisites
 
-Install the bingo card generator as a Python package:
+This application requires Python 3.11 or higher and uses [uv](https://github.com/astral-sh/uv) for fast, reliable package management.
+
+#### Install uv (if not already installed)
 
 ```bash
-# Install from the current directory
-pip install .
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Or install in development mode if you plan to modify the code
-pip install -e .
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-After installation, you can use these commands from anywhere:
+### Option 1: Install from Source (Recommended)
+
+Install the bingo card generator from the project directory:
 
 ```bash
-# Generate bingo cards
+# Clone or navigate to the project directory
+cd bingo-app
+
+# Install the package and all dependencies
+uv sync
+
+# The CLI commands are now available
+uv run create-bingo-card
+uv run create-spooky-bingo
+```
+
+### Option 2: Development Mode
+
+For active development where you want changes to be immediately reflected:
+
+```bash
+# Install in development mode
+uv pip install -e .
+
+# Run commands directly (no 'uv run' prefix needed)
 create-bingo-card
-
-# Alternative command (same functionality)
 create-spooky-bingo
-```
-
-### Option 2: Environment Setup (Development)
-
-This application requires Python 3.11. We recommend using Conda to manage your environment.
-
-#### If you don't have the environment yet:
-
-```bash
-# Create a new conda environment named 'bingo-app' with Python 3.11
-conda create -n bingo-app python=3.11
-
-# Activate the environment
-conda activate bingo-app
-
-# Install python requirements
-pip install -r requirements.txt
-```
-
-#### If the environment already exists:
-
-```bash
-# Activate the existing environment
-conda activate bingo-app
 ```
 
 ## Running the Bingo Card Generator
 
-### If you installed via pip:
+### Using uv run (Recommended)
 
 ```bash
-# Use the CLI command
-create-bingo-card
+# Use the CLI command with uv run
+uv run create-bingo-card
 
 # Or use the alias
+uv run create-spooky-bingo
+```
+
+### If you installed in development mode:
+
+```bash
+# Run commands directly
+create-bingo-card
 create-spooky-bingo
 ```
 
-### If you're running from source:
+### Running from source:
 
 ```bash
-# Run the Python script directly
-python create_bingo_card.py
+# Run the Python script directly with uv
+uv run python create_bingo_card.py
 ```
 
 ### Usage Options
@@ -76,21 +81,27 @@ You can run the generator in two ways:
 1. **Interactive Mode**: Run the command with no arguments, and the CLI will walk you through all configuration options.
 
     ```bash
-    # If installed via pip
+    # Using uv run
+    uv run create-bingo-card
+
+    # If installed in dev mode
     create-bingo-card
-    
-    # If running from source
-    python create_bingo_card.py
+
+    # Running from source
+    uv run python create_bingo_card.py
     ```
 
 2. **Command-line Arguments**: Provide specific options directly as arguments.
 
     ```bash
-    # If installed via pip
+    # Using uv run
+    uv run create-bingo-card --csv-file my_tiles.csv --image-path background.jpg
+
+    # If installed in dev mode
     create-bingo-card --csv-file my_tiles.csv --image-path background.jpg
-    
-    # If running from source
-    python create_bingo_card.py --csv-file my_tiles.csv --image-path background.jpg
+
+    # Running from source
+    uv run python create_bingo_card.py --csv-file my_tiles.csv --image-path background.jpg
     ```
 
 ### Command-line Options
@@ -117,31 +128,40 @@ Generate a bingo card HTML file from a CSV of tile values and a background image
 Generate a standard 5×5 bingo card with a free center:
 
 ```bash
-# If installed via pip
+# Using uv run
+uv run create-bingo-card --csv-file data/my_terms.csv --free-center --output my_bingo_card
+
+# If installed in dev mode
 create-bingo-card --csv-file data/my_terms.csv --free-center --output my_bingo_card
 
-# If running from source
-python create_bingo_card.py --csv-file data/my_terms.csv --free-center --output my_bingo_card
+# Running from source
+uv run python create_bingo_card.py --csv-file data/my_terms.csv --free-center --output my_bingo_card
 ```
 
 Generate a custom 7×7 bingo card with a background image:
 
 ```bash
-# If installed via pip
+# Using uv run
+uv run create-bingo-card --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
+
+# If installed in dev mode
 create-bingo-card --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
 
-# If running from source
-python create_bingo_card.py --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
+# Running from source
+uv run python create_bingo_card.py --csv-file data/lots_of_terms.csv --tile-size 7 --image-path images/background.jpg
 ```
 
 Generate a ghost hunt themed bingo card:
 
 ```bash
-# If installed via pip
+# Using uv run
+uv run create-spooky-bingo --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
+
+# If installed in dev mode
 create-spooky-bingo --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
 
-# If running from source
-python create_bingo_card.py --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
+# Running from source
+uv run python create_bingo_card.py --theme ghost --csv-file ghost_hunt_tiles.csv --output ghost_hunt
 ```
 
 ## Themes
@@ -163,7 +183,7 @@ The bingo card generator supports multiple themes:
 To use a theme, add the `--theme` option:
 
 ```bash
-python create_bingo_card.py --theme ghost
+uv run create-bingo-card --theme ghost
 ```
 
 ## Updating Google Sites
@@ -172,11 +192,14 @@ After generating your bingo cards, follow these steps to update the Google Sites
 
 1. **Generate the bingo HTML files**
    ```bash
-   # If installed via pip
+   # Using uv run
+   uv run create-bingo-card
+
+   # If installed in dev mode
    create-bingo-card
-   
-   # If running from source
-   python create_bingo_card.py
+
+   # Running from source
+   uv run python create_bingo_card.py
    ```
    This will create your bingo HTML files (e.g., `bingo_5x5.html` and `bingo_7x7.html`)
 

@@ -8,7 +8,8 @@ This is a standalone Python CLI application that generates static, self-containe
 
 ## Tech Stack
 
-- **Python 3.11**: Core language (managed via Conda environment)
+- **Python 3.11+**: Core language
+- **Package Manager**: uv for fast, reliable dependency management
 - **CLI Framework**: Click for command-line interface
 - **UI Libraries**: Rich and Questionary for enhanced interactive terminal experience
 - **Template Engine**: Jinja2 for HTML generation
@@ -22,7 +23,6 @@ This is a standalone Python CLI application that generates static, self-containe
 bingo_v1/
 ├── create_bingo_card.py    # Main CLI application
 ├── bingo.jinja            # HTML template with embedded CSS/JS
-├── requirements.txt       # Python dependencies
 ├── Bingo Tiles.csv       # Sample CSV data file
 ├── images/               # Image assets directory
 │   ├── default_background.png
@@ -32,6 +32,10 @@ bingo_v1/
 │   └── real_hexy_bald.png
 ├── bingo_5x5.html        # Sample generated output
 └── bingo_7x7.html        # Sample generated output
+
+Root directory:
+├── pyproject.toml        # Project dependencies and configuration
+└── README.md            # Project documentation
 ```
 
 ## Application Generation Process
@@ -83,19 +87,36 @@ The generated HTML file is completely self-contained:
 ## Development Commands
 
 ```bash
-# Set up environment
-conda create -n bingo-app python=3.11
-conda activate bingo-app
-pip install -r requirements.txt
+# Install uv (if not already installed)
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Set up project and install dependencies
+uv sync
+
+# Run the CLI (using uv run)
+uv run create-bingo-card
 
 # Run interactive mode
-python create_bingo_card.py
+uv run python create_bingo_card.py
 
 # Run with command-line arguments
-python create_bingo_card.py --csv-file data.csv --tile-size 5 --free-center
+uv run create-bingo-card --csv-file data.csv --tile-size 5 --free-center
 
 # Generate both 5x5 and 7x7 cards
-python create_bingo_card.py --csv-file data.csv --output my_bingo
+uv run create-bingo-card --csv-file data.csv --output my_bingo
+
+# Add new dependencies
+uv add package-name
+
+# Remove dependencies
+uv remove package-name
+
+# Update dependencies
+uv lock --upgrade
 ```
 
 ## CLI Options
