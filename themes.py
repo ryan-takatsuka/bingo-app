@@ -67,6 +67,70 @@ THEMES = {
             "secondary": "Nosifer",
             "accent": "Eater"
         }
+    },
+    "thanksgiving": {
+        "name": "Thanksgiving Feast",
+        "colors": {
+            "background": "#422200",
+            "text": "#fef3c7",
+            "primary": "#f97316",
+            "secondary": "#ea580c",
+            "accent": "#dc2626",
+            "tile_bg": "#5a3010",
+            "tile_border": "#f97316",
+            "tile_revealed_text": "#fffbeb",
+            "neon_glow": "rgba(249, 115, 22, 0.7)",
+            "grid": "rgba(220, 38, 38, 0.3)"
+        },
+        "messages": {
+            "bingo": "BINGO!",
+            "double_bingo": "DOUBLE BINGO!",
+            "h_bingo": "H BINGO!",
+            "super_bingo": "You are a God Gamer"
+        },
+        "emojis": {
+            "confetti": ["🦃", "🍂", "🍁", "🌽", "🥧", "🎃", "🍞", "🥔", "🥕", "🌾"],
+            "decorations": ["🦃", "🍂"],
+            "button_randomize": "🎲",
+            "button_reset": "🔄"
+        },
+        "fonts": {
+            "primary": "Amatic SC",
+            "secondary": "Patrick Hand",
+            "accent": "Satisfy"
+        }
+    },
+    "christmas": {
+        "name": "Christmas Wonderland",
+        "colors": {
+            "background": "#0a3d1a",
+            "text": "#fef3c7",
+            "primary": "#dc2626",
+            "secondary": "#16a34a",
+            "accent": "#fbbf24",
+            "tile_bg": "#165c33",
+            "tile_border": "#dc2626",
+            "tile_revealed_text": "#ffffff",
+            "neon_glow": "rgba(220, 38, 38, 0.7)",
+            "grid": "rgba(251, 191, 36, 0.3)"
+        },
+        "messages": {
+            "bingo": "BINGO!",
+            "double_bingo": "DOUBLE BINGO!",
+            "h_bingo": "H BINGO!",
+            "super_bingo": "You are a God Gamer"
+        },
+        "emojis": {
+            "confetti": ["🎄", "🎅", "⛄", "🎁", "❄️", "⭐", "🔔", "🦌", "🧦", "🍪"],
+            "decorations": ["🎄", "⭐"],
+            "button_randomize": "🎲",
+            "button_reset": "🔄"
+        },
+        "fonts": {
+            "primary": "Mountains of Christmas",
+            "secondary": "Fredoka One",
+            "accent": "Lobster"
+        }
     }
 }
 

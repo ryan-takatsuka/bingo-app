@@ -386,7 +386,7 @@ def generate_bingo_html_card(
             "double_bingo_image": double_bingo_image_encoding,
             "super_bingo_image": super_bingo_image_encoding,
             "N_options": len(all_bingo_items),
-            "background_color": theme_config["colors"]["background"],
+            "background_color": background_color,
             "theme": theme_config,
         }
     else:
