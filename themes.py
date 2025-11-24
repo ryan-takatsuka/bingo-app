@@ -1,9 +1,61 @@
-"""
-Theme configurations for the bingo app.
+"""Theme configurations for the bingo app.
+
 Each theme defines colors, messages, and visual elements.
 """
 
-THEMES = {
+from typing import Literal, TypedDict
+
+
+class ThemeColors(TypedDict):
+    """Color configuration for a theme."""
+    background: str
+    text: str
+    primary: str
+    secondary: str
+    accent: str
+    tile_bg: str
+    tile_border: str
+    tile_revealed_text: str
+    neon_glow: str
+    grid: str
+
+
+class ThemeMessages(TypedDict):
+    """Message configuration for a theme."""
+    bingo: str
+    double_bingo: str
+    h_bingo: str
+    super_bingo: str
+
+
+class ThemeEmojis(TypedDict):
+    """Emoji configuration for a theme."""
+    confetti: list[str]
+    decorations: list[str]
+    button_randomize: str
+    button_reset: str
+
+
+class ThemeFonts(TypedDict):
+    """Font configuration for a theme."""
+    primary: str
+    secondary: str
+    accent: str
+
+
+class Theme(TypedDict):
+    """Complete theme configuration."""
+    name: str
+    colors: ThemeColors
+    messages: ThemeMessages
+    emojis: ThemeEmojis
+    fonts: ThemeFonts
+
+
+ThemeName = Literal["alien", "ghost", "thanksgiving", "christmas"]
+
+
+THEMES: dict[ThemeName, Theme] = {
     "alien": {
         "name": "Alien Invasion",
         "colors": {
@@ -134,10 +186,23 @@ THEMES = {
     }
 }
 
-def get_theme(theme_name):
-    """Get theme configuration by name."""
-    return THEMES.get(theme_name, THEMES["alien"])
 
-def list_themes():
-    """List all available theme names."""
+def get_theme(theme_name: str) -> Theme:
+    """Get theme configuration by name.
+
+    Args:
+        theme_name: Name of the theme to retrieve.
+
+    Returns:
+        Theme configuration dictionary.
+    """
+    return THEMES.get(theme_name, THEMES["alien"])  # type: ignore
+
+
+def list_themes() -> list[str]:
+    """List all available theme names.
+
+    Returns:
+        List of theme name strings.
+    """
     return list(THEMES.keys())

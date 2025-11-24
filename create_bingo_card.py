@@ -1,64 +1,33 @@
-from pathlib import Path
-from jinja2 import Template
-import io
-from typing import List, Optional, Dict, Any
-import click
-import numpy as np
 import random
-import base64
-from PIL import Image
-from io import BytesIO
-import os
+from pathlib import Path
+from typing import Any
+
+import click
 import questionary
-import subprocess
-import sys
-import shlex
+from jinja2 import Template
+from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
-from themes import get_theme, list_themes
+
+from image_processor import process_all_images
+from themes import Theme, get_theme, list_themes
 
 # Initialize rich console
 console = Console()
 
-
-def normalize_path(path_string: str) -> str:
-    """
-    Normalize a path string by handling escaped spaces and shell-style quotes.
-
-    This function processes path strings that may contain:
-    - Escaped spaces (e.g., "Photos\ Library")
-    - Quoted paths (e.g., '"My Documents"')
-    - Tilde expansion (e.g., "~/Documents")
-
-    Args:
-        path_string: Raw path string from user input
-
-    Returns:
-        Normalized path string suitable for Path() constructor
-    """
-    if not path_string:
-        return path_string
-
-    # Expand user home directory
-    path_string = os.path.expanduser(path_string)
-
-    # Use shlex to properly parse shell-style escaping and quotes
-    # This handles both escaped spaces and quoted strings
-    try:
-        # shlex.split handles escaped spaces and quotes properly
-        parsed = shlex.split(path_string)
-        # If parsing succeeds, join the parts (usually just one element for a path)
-        return ' '.join(parsed)
-    except ValueError:
-        # If shlex parsing fails (e.g., unclosed quotes), fall back to simple replacement
-        # This handles the case of backslash-escaped spaces
-        return path_string.replace('\\ ', ' ')
+# Configure loguru for errors only - suppress INFO/WARNING to avoid conflicts with progress bars
+logger.remove()
+logger.add(
+    lambda msg: console.print(f"[red bold]ERROR:[/] {msg}", markup=True, highlight=False),
+    format="{message}",
+    level="ERROR"
+)
 
 
-def load_bingo_data(csv_file_path: Path) -> List[str]:
+def load_bingo_data(csv_file_path: Path) -> list[str]:
     """Load bingo tile values from a CSV file.
 
     Args:
@@ -71,15 +40,17 @@ def load_bingo_data(csv_file_path: Path) -> List[str]:
         FileNotFoundError: If the CSV file does not exist.
     """
     if not csv_file_path.exists():
+        logger.error(f"CSV file not found: {csv_file_path}")
         raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
 
-    with csv_file_path.open() as f:
+    with csv_file_path.open(encoding="utf-8") as f:
         # Read lines, strip whitespace, and filter out empty lines
         lines = [line.strip() for line in f.readlines()]
-        return list(set([line for line in lines if line]))
+        unique_items = list({line for line in lines if line})
+        return unique_items
 
 
-def escape_quotes(items: List[str]) -> List[str]:
+def escape_quotes(items: list[str]) -> list[str]:
     """Add escape character to quotes in strings so they are added properly to the HTML.
 
     Args:
@@ -91,162 +62,7 @@ def escape_quotes(items: List[str]) -> List[str]:
     return [item.replace('"', '\\"') for item in items]
 
 
-def get_image_size_kb(img: Image.Image, format: str = "PNG") -> float:
-    """Get the size of an image in kilobytes.
-
-    Args:
-        img: PIL Image object to measure.
-        format: Image format to use when calculating size (default: PNG).
-
-    Returns:
-        Size of the image in kilobytes.
-    """
-    buffer = BytesIO()
-    img.save(buffer, format=format)
-    size_bytes = len(buffer.getvalue())
-    return size_bytes / 1024
-
-
-def scale_image_to_target_size(img: Image.Image, target_size_kb: float = 250.0, format: str = "PNG") -> Image.Image:
-    """Scale an image down to meet a target file size in KB.
-
-    Uses binary search to find the optimal scale factor that results in an image
-    size close to but not exceeding the target size.
-
-    Args:
-        img: PIL Image object to scale.
-        target_size_kb: Target maximum size in kilobytes (default: 250.0).
-        format: Image format to use when calculating size (default: PNG).
-
-    Returns:
-        Scaled PIL Image object.
-    """
-    # Start with the original image
-    current_img = img.copy()
-    current_size_kb = get_image_size_kb(current_img, format)
-
-    # If image is already smaller than target, return it unchanged
-    if current_size_kb <= target_size_kb:
-        return current_img
-
-    # Binary search to find the right scale factor
-    min_scale = 0.1
-    max_scale = 1.0
-    best_img = None
-    best_size_kb = current_size_kb
-    best_scale = max_scale
-
-    # Try up to 10 iterations to get close to target size
-    for _ in range(10):
-        scale = (min_scale + max_scale) / 2
-        width, height = img.size
-        new_width = int(width * scale)
-        new_height = int(height * scale)
-
-        resized_img = img.resize((new_width, new_height),
-                                 Image.LANCZOS if hasattr(Image, "LANCZOS") else Image.ANTIALIAS)
-        size_kb = get_image_size_kb(resized_img, format)
-
-        # Update best result if this one is closer to target
-        if size_kb <= target_size_kb and size_kb > best_size_kb:
-            best_img = resized_img
-            best_size_kb = size_kb
-            best_scale = scale
-
-        # Adjust search range
-        if size_kb > target_size_kb:
-            max_scale = scale
-        else:
-            min_scale = scale
-
-    # If we couldn't find a suitable size, use the smallest one
-    if best_img is None:
-        width, height = img.size
-        new_width = int(width * min_scale)
-        new_height = int(height * min_scale)
-        best_img = img.resize((new_width, new_height),
-                              Image.LANCZOS if hasattr(Image, "LANCZOS") else Image.ANTIALIAS)
-
-    return best_img
-
-
-def create_image_encoding_from_path(
-        image_path: Path,
-        target_size_kb: float = 250.0,
-        no_downscaling: bool = False,
-        tile_size: int = 5,
-        image_type: str = "background"
-) -> str:
-    """
-    Convert an image to a base64 encoded string for embedding in HTML.
-    Adjusts the image to match the aspect ratio of the bingo grid (square)
-    so the entire image fits within the grid of tiles.
-    Automatically scales the image to stay under target_size_kb unless no_downscaling is True.
-
-    Parameters:
-    - image_path: Path to the image file
-    - target_size_kb: Target maximum size in KB
-    - no_downscaling: If True, disable automatic scaling
-    - tile_size: Size of the bingo grid (for background image sizing)
-    - image_type: Type of image - "background", "h_bingo", or "celebration"
-                 (determines which size limit to apply)
-    """
-    if not image_path.exists():
-        raise FileNotFoundError(f"Image file not found: {image_path}")
-
-    # Set appropriate target size based on image type
-    if image_type == "h_bingo" or image_type == "celebration":
-        # Use 50KB limit for celebration images
-        actual_target_size_kb = 50.0
-    else:
-        # Use default (250KB) for background image
-        actual_target_size_kb = target_size_kb
-
-    # Read image from path
-    img = Image.open(image_path)
-
-    # Bingo grid is always square, so we want a square image
-    # Create a square canvas with padding to preserve aspect ratio
-    original_width, original_height = img.size
-
-    # Determine the size of the square we need
-    max_dimension = max(original_width, original_height)
-
-    # Create a new square image with transparent background
-    square_img = Image.new("RGBA", (max_dimension, max_dimension), (0, 0, 0, 0))
-
-    # Calculate position to paste the original image so it's centered
-    paste_x = (max_dimension - original_width) // 2
-    paste_y = (max_dimension - original_height) // 2
-
-    # Paste the original image on the transparent canvas
-    if img.mode != "RGBA":
-        img = img.convert("RGBA")
-    square_img.paste(img, (paste_x, paste_y), img if img.mode == "RGBA" else None)
-
-    # Apply automatic scaling if needed and not disabled
-    if not no_downscaling:
-        current_size_kb = get_image_size_kb(square_img)
-        if current_size_kb > actual_target_size_kb:
-            square_img = scale_image_to_target_size(square_img, actual_target_size_kb)
-            if image_type == "h_bingo" or image_type == "celebration":
-                console.print(f"[yellow]{image_type.capitalize()} image automatically scaled down to stay under "
-                              f"{actual_target_size_kb} KB[/]")
-            else:
-                console.print(f"[yellow]Image automatically scaled down to stay under {actual_target_size_kb} KB[/]")
-
-    # Save new image to local buffer
-    buffer = BytesIO()
-    square_img.save(buffer, format="PNG")
-    buffer.seek(0)
-    img_bytes = buffer.read()
-
-    # Encode image with base64 and return string
-    base64_encoded_result_bytes = base64.b64encode(img_bytes)
-    return base64_encoded_result_bytes.decode("ascii")
-
-
-def load_jinja_template(template_path: Optional[Path] = None) -> Template:
+def load_jinja_template(template_path: Path | None = None) -> Template:
     """Load the bingo Jinja template file.
 
     Args:
@@ -263,14 +79,15 @@ def load_jinja_template(template_path: Optional[Path] = None) -> Template:
         template_path = Path("bingo.jinja").resolve()
 
     if not template_path.exists():
+        logger.error(f"Template file not found: {template_path}")
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     # Load the jinja template
-    with io.open(template_path, "r", encoding="utf-8") as f:
+    with open(template_path, encoding="utf-8") as f:
         return Template(f.read())
 
 
-def get_random_bingo_items(items: List[str], free_center: bool = False, tile_size: int = 5) -> List[List[str]]:
+def get_random_bingo_items(items: list[str], free_center: bool = False, tile_size: int = 5) -> list[list[str]]:
     """Generate a randomized 2D grid of bingo items.
 
     Args:
@@ -299,9 +116,9 @@ def get_random_bingo_items(items: List[str], free_center: bool = False, tile_siz
     # Create the bingo data to fill the jinja html table
     bingo_data = []
     item_number = 0
-    for row in range(tile_size):
+    for _ in range(tile_size):
         row_data = []
-        for col in range(tile_size):
+        for _ in range(tile_size):
             row_data.append(randomized_items[item_number])
             item_number += 1
         bingo_data.append(row_data)
@@ -310,7 +127,7 @@ def get_random_bingo_items(items: List[str], free_center: bool = False, tile_siz
     if free_center:
         if tile_size % 2 == 0:
             raise ValueError("Cannot set center tile with even-sized bingo grid.")
-        center_index = int(np.floor(tile_size / 2))
+        center_index = tile_size // 2
         bingo_data[center_index][center_index] = "FREE"
 
     return bingo_data
@@ -344,8 +161,8 @@ def validate_hex_color(color: str) -> bool:
 
 
 def generate_bingo_html_card(
-        initial_items: List[List[str]],
-        all_bingo_items: List[str],
+        initial_items: list[list[str]],
+        all_bingo_items: list[str],
         image_encoding: str,
         h_bingo_image_encoding: str,
         bingo_image_encoding: str,
@@ -353,7 +170,7 @@ def generate_bingo_html_card(
         super_bingo_image_encoding: str,
         output_file: Path,
         background_color: str = "#f5f9ff",
-        theme_config: Optional[Dict[str, Any]] = None,
+        theme_config: Theme | None = None,
 ) -> Path:
     """Generate the HTML bingo card file using the Jinja template.
 
@@ -374,34 +191,24 @@ def generate_bingo_html_card(
     """
     # Load jinja template and populate with bingo data
     template = load_jinja_template()
-    
-    # If theme config is provided, use theme colors, otherwise use defaults
+
+    # Build template data dictionary
+    template_data = {
+        "initial_items": initial_items,
+        "all_bingo_items": escape_quotes(all_bingo_items),
+        "image": image_encoding,
+        "h_bingo_image": h_bingo_image_encoding,
+        "bingo_image": bingo_image_encoding,
+        "double_bingo_image": double_bingo_image_encoding,
+        "super_bingo_image": super_bingo_image_encoding,
+        "N_options": len(all_bingo_items),
+        "background_color": background_color,
+    }
+
+    # Add theme config if provided
     if theme_config:
-        template_data = {
-            "initial_items": initial_items,
-            "all_bingo_items": escape_quotes(all_bingo_items),
-            "image": image_encoding,
-            "h_bingo_image": h_bingo_image_encoding,
-            "bingo_image": bingo_image_encoding,
-            "double_bingo_image": double_bingo_image_encoding,
-            "super_bingo_image": super_bingo_image_encoding,
-            "N_options": len(all_bingo_items),
-            "background_color": background_color,
-            "theme": theme_config,
-        }
-    else:
-        template_data = {
-            "initial_items": initial_items,
-            "all_bingo_items": escape_quotes(all_bingo_items),
-            "image": image_encoding,
-            "h_bingo_image": h_bingo_image_encoding,
-            "bingo_image": bingo_image_encoding,
-            "double_bingo_image": double_bingo_image_encoding,
-            "super_bingo_image": super_bingo_image_encoding,
-            "N_options": len(all_bingo_items),
-            "background_color": background_color,
-        }
-    
+        template_data["theme"] = theme_config
+
     html_str = template.render(template_data)
 
     # Write output html file
@@ -411,8 +218,8 @@ def generate_bingo_html_card(
 
 
 def prompt_for_input(
-        defaults: Dict[str, Any]
-) -> Dict[str, Any]:
+        defaults: dict[str, Any]
+) -> dict[str, Any]:
     """
     Prompt the user for input values using questionary.
 
@@ -484,12 +291,11 @@ def prompt_for_input(
     ).ask()
 
     if specify_tile_size:
-        tile_size_default = str(defaults["tile_size"])
-        tile_size = questionary.text(
+        tile_size_input = questionary.text(
             "Tile size (number of rows/columns):",
-            default=tile_size_default
+            default="5"
         ).ask()
-        results["tile_size"] = int(tile_size or tile_size_default)
+        results["tile_size"] = int(tile_size_input or "5")
     else:
         results["tile_size"] = None  # Signal to generate both 5x5 and 7x7
 
@@ -529,9 +335,9 @@ def prompt_for_input(
 
 
 def generate_bingo_card(
-        cfg: Dict[str, Any],
+        cfg: dict[str, Any],
         tile_size: int,
-        theme_config: Optional[Dict[str, Any]] = None
+        theme_config: Theme | None = None
 ) -> Path:
     """
     Generate a single bingo card with the specified tile size.
@@ -544,7 +350,7 @@ def generate_bingo_card(
         Path to the generated HTML file.
     """
     # Prepare output filename with tile size suffix
-    base_output = Path(normalize_path(cfg["output"]))
+    base_output = Path(cfg["output"]).expanduser().resolve()
     stem = base_output.stem
     suffix = base_output.suffix
     output_with_size = base_output.parent / f"{stem}_{tile_size}x{tile_size}{suffix}"
@@ -557,11 +363,11 @@ def generate_bingo_card(
             console=console
     ) as progress:
         # Set up progress tracking
-        main_task = progress.add_task(f"Generating {tile_size}x{tile_size} bingo card", total=5)
+        main_task = progress.add_task(f"Generating {tile_size}x{tile_size} bingo card", total=4)
 
         # Load data
-        progress.update(main_task, description=f"Loading bingo values from {cfg['csv_file']}")
-        csv_file_path = Path(normalize_path(cfg["csv_file"])).resolve()
+        progress.update(main_task, description="Loading bingo values")
+        csv_file_path = Path(cfg["csv_file"]).expanduser().resolve()
         all_bingo_items = load_bingo_data(csv_file_path)
         progress.advance(main_task)
 
@@ -570,44 +376,9 @@ def generate_bingo_card(
         initial_items = get_random_bingo_items(all_bingo_items, free_center=cfg["free_center"], tile_size=tile_size)
         progress.advance(main_task)
 
-        # Process images
-        progress.update(main_task, description="Processing background image")
-        image_file_path = Path(normalize_path(cfg["image_path"])).resolve()
-        image_encoding = create_image_encoding_from_path(
-            image_file_path,
-            no_downscaling=cfg["no_downscaling"],
-            tile_size=tile_size,
-            image_type="background"
-        )
-
-        progress.update(main_task, description="Processing celebration images (max 50KB)")
-        h_bingo_image_file_path = Path(normalize_path(cfg["h_bingo_image_path"])).resolve()
-        h_bingo_image_encoding = create_image_encoding_from_path(
-            h_bingo_image_file_path,
-            no_downscaling=cfg["no_downscaling"],
-            image_type="h_bingo"
-        )
-
-        bingo_image_file_path = Path(normalize_path(cfg["bingo_image_path"])).resolve()
-        bingo_image_encoding = create_image_encoding_from_path(
-            bingo_image_file_path,
-            no_downscaling=cfg["no_downscaling"],
-            image_type="celebration"
-        )
-
-        double_bingo_image_file_path = Path(normalize_path(cfg["double_bingo_image_path"])).resolve()
-        double_bingo_image_encoding = create_image_encoding_from_path(
-            double_bingo_image_file_path,
-            no_downscaling=cfg["no_downscaling"],
-            image_type="celebration"
-        )
-
-        super_bingo_image_file_path = Path(normalize_path(cfg["super_bingo_image_path"])).resolve()
-        super_bingo_image_encoding = create_image_encoding_from_path(
-            super_bingo_image_file_path,
-            no_downscaling=cfg["no_downscaling"],
-            image_type="celebration"
-        )
+        # Process all images with progress updates
+        progress.update(main_task, description="Processing images")
+        images = process_all_images(cfg, progress_task=main_task, progress_tracker=progress)
         progress.advance(main_task)
 
         # Generate HTML
@@ -615,25 +386,21 @@ def generate_bingo_card(
         bingo_file = generate_bingo_html_card(
             initial_items=initial_items,
             all_bingo_items=all_bingo_items,
-            image_encoding=image_encoding,
-            h_bingo_image_encoding=h_bingo_image_encoding,
-            bingo_image_encoding=bingo_image_encoding,
-            double_bingo_image_encoding=double_bingo_image_encoding,
-            super_bingo_image_encoding=super_bingo_image_encoding,
+            image_encoding=images["background"],
+            h_bingo_image_encoding=images["h_bingo"],
+            bingo_image_encoding=images["bingo"],
+            double_bingo_image_encoding=images["double_bingo"],
+            super_bingo_image_encoding=images["super_bingo"],
             output_file=output_with_size,
             background_color=cfg["background_color"],
             theme_config=theme_config,
         )
         progress.advance(main_task)
 
-        # Complete
-        progress.update(main_task, description="Bingo card generation complete!")
-        progress.advance(main_task)
-
     return bingo_file
 
 
-def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> None:
+def show_summary(generated_files: list[Path], all_bingo_items: list[str]) -> None:
     """Display a summary of the generated bingo cards.
 
     Args:
@@ -647,7 +414,7 @@ def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> Non
     table.add_column("Items", style="green")
 
     for file_path in generated_files:
-        file_size = os.path.getsize(file_path) / 1024  # Size in KB
+        file_size = file_path.stat().st_size / 1024  # Size in KB
         table.add_row(
             str(file_path),
             f"{file_size:.1f} KB",
@@ -738,27 +505,20 @@ def show_summary(generated_files: List[Path], all_bingo_items: List[str]) -> Non
     help="Theme to use for the bingo card (alien or ghost)",
     default="alien",
 )
-@click.option(
-    "--update",
-    is_flag=True,
-    help="Update the bingo-card-generator package by pulling latest changes from git repository",
-    default=False,
-)
 def main(
-        csv_file: Optional[str],
-        image_path: Optional[str],
-        h_bingo_image_path: Optional[str],
-        bingo_image_path: Optional[str],
-        double_bingo_image_path: Optional[str],
-        super_bingo_image_path: Optional[str],
-        tile_size: Optional[int],
-        free_center: Optional[bool],
-        output: Optional[str],
+        csv_file: str | None,
+        image_path: str | None,
+        h_bingo_image_path: str | None,
+        bingo_image_path: str | None,
+        double_bingo_image_path: str | None,
+        super_bingo_image_path: str | None,
+        tile_size: int | None,
+        free_center: bool | None,
+        output: str | None,
         no_down_scaling: bool,
-        background_color: Optional[str],
+        background_color: str | None,
         no_interactive: bool,
         theme: str,
-        update: bool,
 ):
     """Generate a bingo card HTML file from a CSV of tile values and a background image.
 
@@ -776,83 +536,10 @@ def main(
         background_color: Hex color for the background and tiles.
         no_interactive: Whether to skip interactive prompts and use defaults.
         theme: Theme to use for the bingo card (alien or ghost).
-        update: Whether to update the package by pulling latest changes from git repository.
     """
-    # Handle update option first
-    if update:
-        console.print(Panel.fit(
-            Text("🔄 UPDATING BINGO CARD GENERATOR", justify="center"),
-            border_style="bright_blue"
-        ))
-        
-        try:
-            # Find the installation directory of the package
-            import bingo_card_generator
-            package_path = Path(bingo_card_generator.__file__).parent
-        except ImportError:
-            # Fallback: try to find the git repository in current directory or parents
-            current_path = Path.cwd()
-            package_path = None
-            
-            # Check current directory and parents for .git directory
-            for path in [current_path] + list(current_path.parents):
-                if (path / '.git').exists():
-                    # Check if this looks like the bingo-app repository
-                    if (path / 'create_bingo_card.py').exists() or (path / 'setup.py').exists():
-                        package_path = path
-                        break
-            
-            if package_path is None:
-                console.print("[red]❌ Could not locate bingo-app git repository.[/]")
-                console.print("[yellow]💡 Make sure you're running this from within the bingo-app directory or that the package is properly installed.[/]")
-                return
-        
-        console.print(f"📁 Found repository at: {package_path}")
-        
-        # Check if it's a git repository
-        git_dir = package_path / '.git'
-        if not git_dir.exists():
-            console.print("[red]❌ Directory is not a git repository.[/]")
-            return
-        
-        # Run git pull
-        try:
-            console.print("🔄 Pulling latest changes...")
-            result = subprocess.run(
-                ['git', 'pull'],
-                cwd=package_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            console.print("[green]✅ Successfully updated the repository![/]")
-            if result.stdout.strip():
-                console.print(f"Git output: {result.stdout.strip()}")
-            
-            # Reinstall the package to pick up any changes
-            console.print("📦 Reinstalling package...")
-            subprocess.run(
-                [sys.executable, '-m', 'pip', 'install', '-e', '.'],
-                cwd=package_path,
-                check=True
-            )
-            console.print("[green]✅ Package reinstalled successfully![/]")
-            
-        except subprocess.CalledProcessError as e:
-            console.print(f"[red]❌ Error updating repository: {e}[/]")
-            if e.stdout:
-                console.print(f"Output: {e.stdout}")
-            if e.stderr:
-                console.print(f"Error: {e.stderr}")
-        except Exception as e:
-            console.print(f"[red]❌ Unexpected error: {e}[/]")
-        
-        return
-    
     # Get theme configuration
     theme_config = get_theme(theme)
-    
+
     # Default values
     defaults = {
         "csv_file": "Bingo Tiles.csv",
@@ -861,14 +548,14 @@ def main(
         "bingo_image_path": "images/rat_king.png",
         "double_bingo_image_path": "images/rat_king.png",
         "super_bingo_image_path": "images/god_gamer.png",
-        "tile_size": 5,
+        "tile_size": None,  # None means generate both 5x5 and 7x7
         "free_center": False,
         "output": "bingo.html",
         "no_downscaling": no_down_scaling,
         # Use theme background color as default, but CLI argument will override this
         "background_color": background_color if background_color else theme_config["colors"]["background"],
     }
-    
+
     # Print welcome banner with theme name
     console.print(Panel.fit(
         Text(f"🎮 BINGO CARD GENERATOR 🎲\n{theme_config['name']} Theme", justify="center"),
@@ -925,7 +612,7 @@ def main(
             raise ValueError(f"Invalid hex color format: {inputs['background_color']}. Please use format like #0a0a30")
 
         # Convert paths
-        csv_file_path = Path(normalize_path(inputs["csv_file"])).resolve()
+        csv_file_path = Path(inputs["csv_file"]).expanduser().resolve()
 
         # Load bingo items (needed to check if we have enough for the requested tile sizes)
         console.print(f"[bold]Loading bingo values from[/] [cyan]{csv_file_path}[/]")
