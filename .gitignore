@@ -175,3 +175,5 @@ cython_debug/
 .DS_Store
 ../.idea/
 *.html
+
+.ruff_cache/
