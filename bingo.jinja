@@ -19,8 +19,8 @@
         :root {
             {% if theme %}
             /* {{ theme.name }} theme */
-            --bg-color: {{ theme.colors.background }};
-            --card-bg: {{ theme.colors.background }};
+            --bg-color: {{ background_color if background_color else theme.colors.background }};
+            --card-bg: {{ background_color if background_color else theme.colors.background }};
             --text-color: {{ theme.colors.text }};
             --primary-color: {{ theme.colors.primary }};
             --secondary-color: {{ theme.colors.secondary }};
