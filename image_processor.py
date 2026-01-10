@@ -5,11 +5,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import Literal
 
-from loguru import logger
 from PIL import Image
-from rich.console import Console
-
-console = Console()
+from PIL.Image import Resampling
 
 ImageType = Literal["background", "h_bingo", "celebration"]
 
@@ -67,7 +64,7 @@ def scale_image_to_target_size(
         new_width = int(width * scale)
         new_height = int(height * scale)
 
-        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+        resized_img = img.resize((new_width, new_height), Resampling.LANCZOS)
         size_kb = get_image_size_kb(resized_img, format)
 
         # Update best result if this one is closer to target
@@ -86,7 +83,7 @@ def scale_image_to_target_size(
         width, height = img.size
         new_width = int(width * min_scale)
         new_height = int(height * min_scale)
-        best_img = img.resize((new_width, new_height), Image.LANCZOS)
+        best_img = img.resize((new_width, new_height), Resampling.LANCZOS)
 
     return best_img
 
@@ -145,7 +142,6 @@ def process_image(
         FileNotFoundError: If the image file does not exist.
     """
     if not image_path.exists():
-        logger.error(f"Image file not found: {image_path}")
         raise FileNotFoundError(f"Image file not found: {image_path}")
 
     # Set appropriate target size based on image type
@@ -186,7 +182,7 @@ def process_all_images(config: dict, progress_task=None, progress_tracker=None) 
     Returns:
         Dictionary mapping image types to their base64 encodings.
     """
-    image_configs = [
+    image_configs: list[tuple[str, str, ImageType]] = [
         ("background", config["image_path"], "background"),
         ("h_bingo", config["h_bingo_image_path"], "h_bingo"),
         ("bingo", config["bingo_image_path"], "celebration"),
@@ -194,17 +190,16 @@ def process_all_images(config: dict, progress_task=None, progress_tracker=None) 
         ("super_bingo", config["super_bingo_image_path"], "celebration"),
     ]
 
-    images = {}
+    images: dict[str, str] = {}
     for idx, (key, path, img_type) in enumerate(image_configs, 1):
         # Update progress description if available
         if progress_tracker and progress_task is not None:
             progress_tracker.update(
-                progress_task,
-                description=f"Processing images ({idx}/{len(image_configs)})"
+                progress_task, description=f"Processing images ({idx}/{len(image_configs)})"
             )
 
         images[key] = process_image(
-            Path(path),
+            Path(path).expanduser().resolve(),
             image_type=img_type,
             no_downscaling=config.get("no_downscaling", False),
         )

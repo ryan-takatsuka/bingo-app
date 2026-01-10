@@ -8,6 +8,7 @@ from typing import Literal, TypedDict
 
 class ThemeColors(TypedDict):
     """Color configuration for a theme."""
+
     background: str
     text: str
     primary: str
@@ -22,6 +23,7 @@ class ThemeColors(TypedDict):
 
 class ThemeMessages(TypedDict):
     """Message configuration for a theme."""
+
     bingo: str
     double_bingo: str
     h_bingo: str
@@ -30,6 +32,7 @@ class ThemeMessages(TypedDict):
 
 class ThemeEmojis(TypedDict):
     """Emoji configuration for a theme."""
+
     confetti: list[str]
     decorations: list[str]
     button_randomize: str
@@ -38,6 +41,7 @@ class ThemeEmojis(TypedDict):
 
 class ThemeFonts(TypedDict):
     """Font configuration for a theme."""
+
     primary: str
     secondary: str
     accent: str
@@ -45,6 +49,7 @@ class ThemeFonts(TypedDict):
 
 class Theme(TypedDict):
     """Complete theme configuration."""
+
     name: str
     colors: ThemeColors
     messages: ThemeMessages
@@ -52,7 +57,7 @@ class Theme(TypedDict):
     fonts: ThemeFonts
 
 
-ThemeName = Literal["alien", "ghost", "thanksgiving", "christmas"]
+ThemeName = Literal["alien", "ghost", "thanksgiving", "christmas", "new_year"]
 
 
 THEMES: dict[ThemeName, Theme] = {
@@ -68,25 +73,21 @@ THEMES: dict[ThemeName, Theme] = {
             "tile_border": "#b5179e",
             "tile_revealed_text": "#ffffff",
             "neon_glow": "rgba(181, 23, 158, 0.7)",
-            "grid": "rgba(115, 3, 192, 0.3)"
+            "grid": "rgba(115, 3, 192, 0.3)",
         },
         "messages": {
             "bingo": "BINGO!",
             "double_bingo": "DOUBLE BINGO!",
             "h_bingo": "H BINGO!",
-            "super_bingo": "You are a God Gamer"
+            "super_bingo": "You are a God Gamer",
         },
         "emojis": {
             "confetti": ["🛸", "👽", "🌠", "🌌", "💫", "✨", "⭐", "🪐", "🔭", "🚀"],
             "decorations": ["🛸", "👽"],
             "button_randomize": "🎲",
-            "button_reset": "↩️"
+            "button_reset": "↩️",
         },
-        "fonts": {
-            "primary": "Orbitron",
-            "secondary": "Exo 2",
-            "accent": "Audiowide"
-        }
+        "fonts": {"primary": "Orbitron", "secondary": "Exo 2", "accent": "Audiowide"},
     },
     "ghost": {
         "name": "Ghost Hunt",
@@ -100,25 +101,21 @@ THEMES: dict[ThemeName, Theme] = {
             "tile_border": "#ff6f00",
             "tile_revealed_text": "#ffffff",
             "neon_glow": "rgba(255, 111, 0, 0.7)",
-            "grid": "rgba(74, 20, 140, 0.3)"
+            "grid": "rgba(74, 20, 140, 0.3)",
         },
         "messages": {
             "bingo": "BINGO!",
             "double_bingo": "DOUBLE BINGO!",
             "h_bingo": "H BINGO!",
-            "super_bingo": "You are a God Gamer"
+            "super_bingo": "You are a God Gamer",
         },
         "emojis": {
             "confetti": ["👻", "👻", "👻", "👻", "👻", "👻", "👻", "👻", "👻", "👻"],
             "decorations": ["👻", "👻"],
             "button_randomize": "👻",
-            "button_reset": "👻"
+            "button_reset": "👻",
         },
-        "fonts": {
-            "primary": "Creepster",
-            "secondary": "Nosifer",
-            "accent": "Eater"
-        }
+        "fonts": {"primary": "Creepster", "secondary": "Nosifer", "accent": "Eater"},
     },
     "thanksgiving": {
         "name": "Thanksgiving Feast",
@@ -132,25 +129,21 @@ THEMES: dict[ThemeName, Theme] = {
             "tile_border": "#f97316",
             "tile_revealed_text": "#fffbeb",
             "neon_glow": "rgba(249, 115, 22, 0.7)",
-            "grid": "rgba(220, 38, 38, 0.3)"
+            "grid": "rgba(220, 38, 38, 0.3)",
         },
         "messages": {
             "bingo": "BINGO!",
             "double_bingo": "DOUBLE BINGO!",
             "h_bingo": "H BINGO!",
-            "super_bingo": "You are a God Gamer"
+            "super_bingo": "You are a God Gamer",
         },
         "emojis": {
             "confetti": ["🦃", "🍂", "🍁", "🌽", "🥧", "🎃", "🍞", "🥔", "🥕", "🌾"],
             "decorations": ["🦃", "🍂"],
             "button_randomize": "🎲",
-            "button_reset": "🔄"
+            "button_reset": "🔄",
         },
-        "fonts": {
-            "primary": "Amatic SC",
-            "secondary": "Patrick Hand",
-            "accent": "Satisfy"
-        }
+        "fonts": {"primary": "Amatic SC", "secondary": "Patrick Hand", "accent": "Satisfy"},
     },
     "christmas": {
         "name": "Christmas Wonderland",
@@ -164,26 +157,58 @@ THEMES: dict[ThemeName, Theme] = {
             "tile_border": "#dc2626",
             "tile_revealed_text": "#ffffff",
             "neon_glow": "rgba(220, 38, 38, 0.7)",
-            "grid": "rgba(251, 191, 36, 0.3)"
+            "grid": "rgba(251, 191, 36, 0.3)",
         },
         "messages": {
             "bingo": "BINGO!",
             "double_bingo": "DOUBLE BINGO!",
             "h_bingo": "H BINGO!",
-            "super_bingo": "You are a God Gamer"
+            "super_bingo": "You are a God Gamer",
         },
         "emojis": {
-            "confetti": ["🎄", "🎅", "⛄", "🎁", "❄️", "⭐", "🔔", "🦌", "🧦", "🍪"],
-            "decorations": ["🎄", "⭐"],
+            "confetti": ["🎄", "🎅", "⛄", "🎁", "❄️", "⭐", "🦌"],
+            "decorations": ["🎄", "🎅"],
             "button_randomize": "🎲",
-            "button_reset": "🔄"
+            "button_reset": "🔄",
         },
         "fonts": {
             "primary": "Mountains of Christmas",
             "secondary": "Fredoka One",
-            "accent": "Lobster"
-        }
-    }
+            "accent": "Lobster",
+        },
+    },
+    "new_year": {
+        "name": "New Year's Celebration",
+        "colors": {
+            "background": "#1e2328",
+            "text": "#f5f5f5",
+            "primary": "#ffd700",
+            "secondary": "#c0c0c0",
+            "accent": "#ff1493",
+            "tile_bg": "#1a1a2e",
+            "tile_border": "#ffd700",
+            "tile_revealed_text": "#ffffff",
+            "neon_glow": "rgba(255, 215, 0, 0.7)",
+            "grid": "rgba(192, 192, 192, 0.3)",
+        },
+        "messages": {
+            "bingo": "BINGO!",
+            "double_bingo": "DOUBLE BINGO!",
+            "h_bingo": "H BINGO!",
+            "super_bingo": "You are a God Gamer",
+        },
+        "emojis": {
+            "confetti": ["🎆", "🎇", "🥂", "🍾", "✨", "🎉", "🎊", "⭐", "💫", "🌟"],
+            "decorations": ["🎆", "🥂"],
+            "button_randomize": "🎲",
+            "button_reset": "🔄",
+        },
+        "fonts": {
+            "primary": "Playfair Display",
+            "secondary": "Montserrat",
+            "accent": "Great Vibes",
+        },
+    },
 }
 
 
@@ -194,9 +219,13 @@ def get_theme(theme_name: str) -> Theme:
         theme_name: Name of the theme to retrieve.
 
     Returns:
-        Theme configuration dictionary.
+        Theme configuration dictionary, falling back to 'alien' theme if not found.
     """
-    return THEMES.get(theme_name, THEMES["alien"])  # type: ignore
+    # Cast to ThemeName to satisfy mypy; default to "alien" if not found
+    valid_themes: set[str] = set(THEMES.keys())
+    if theme_name in valid_themes:
+        return THEMES[theme_name]  # type: ignore[index]
+    return THEMES["alien"]
 
 
 def list_themes() -> list[str]:

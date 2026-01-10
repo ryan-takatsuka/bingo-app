@@ -34,10 +34,10 @@ bingo-app/
 ### Key Design Patterns
 
 1. **Modular Separation**: Main CLI delegates to specialized modules (image processing, themes)
-2. **Type Safety**: Uses TypedDict for theme configs, modern type hints throughout
+2. **Type Safety**: Uses TypedDict for theme configs and `BingoConfig`, modern type hints throughout
 3. **Clean CLI Output**: Loguru configured for ERROR only; Rich Progress handles all user feedback
-4. **Path Handling**: Pure pathlib with `.expanduser().resolve()` for all paths
-5. **No Pydantic in Runtime**: Config passed as dicts for simplicity (Pydantic models exist but unused)
+4. **Path Handling**: Use `resolve_path()` utility for consistent path resolution with `.expanduser().resolve()`
+5. **Minimal Dependencies**: Pydantic removed from runtime; dict-based config is simpler
 
 ### Data Flow
 
@@ -46,7 +46,7 @@ CSV file → load_bingo_data() → unique list[str]
                                      ↓
                             get_random_bingo_items() → 2D grid
                                      ↓
-Images → process_all_images() → base64 encodings
+Images → process_all_images() → dict of base64 encodings
                                      ↓
                             generate_bingo_html_card() → self-contained HTML
 ```
@@ -69,11 +69,17 @@ uv run create-bingo-card --csv-file data.csv --output my_bingo
 # Test with different themes
 uv run create-bingo-card --theme thanksgiving --free-center
 
+# Custom celebration images
+uv run create-bingo-card --bingo-image-path img.png --double-bingo-image-path img2.png --super-bingo-image-path img3.png
+
 # Code quality checks
 uv run ruff check *.py          # Linting (configured in pyproject.toml)
 uv run ruff check --fix *.py    # Auto-fix issues
 uv run black *.py               # Format code
 uv run mypy *.py                # Type checking
+
+# Run tests (test directory configured but no tests exist yet)
+uv run pytest
 
 # Add/remove dependencies
 uv add package-name
@@ -88,8 +94,8 @@ uv lock --upgrade
 **Critical**: All images are converted to square aspect ratio by padding with transparency. This ensures proper reveal mechanics in the bingo grid.
 
 **Size Limits**:
-- Background images: 250KB max (configurable)
-- Celebration images: 50KB max (hardcoded)
+- Background images: 250KB max (configurable via `target_size_kb`)
+- Celebration images (h_bingo, bingo, double_bingo, super_bingo): 50KB max (hardcoded)
 - Images exceeding limits are automatically scaled using binary search algorithm
 
 **Process**: `load → make_square → scale_if_needed → encode_base64`
@@ -114,7 +120,7 @@ The `process_all_images()` function accepts optional `progress_task` and `progre
 
 Themes are defined as TypedDict structures with strict typing:
 - `ThemeColors`, `ThemeMessages`, `ThemeEmojis`, `ThemeFonts`
-- Available themes: `alien`, `ghost`, `thanksgiving`, `christmas`
+- Available themes: `alien`, `ghost`, `thanksgiving`, `christmas`, `new_year`
 - Each theme defines colors, fonts (Google Fonts), emojis, and win messages
 
 When adding new themes: copy existing theme structure in `THEMES` dict and update all required fields.
@@ -161,10 +167,10 @@ The generated HTML is **completely self-contained**:
 ## Key Constraints & Decisions
 
 1. **No NumPy**: Removed to reduce 20MB installation size (use `//` for integer division)
-2. **Loguru ERROR-only**: INFO/WARNING suppressed to prevent progress bar conflicts
-3. **No Pydantic at runtime**: Models exist but unused; dict-based config is simpler
-4. **PIL/Pillow only**: Use `Image.LANCZOS` (ANTIALIAS deprecated)
-5. **Pure pathlib**: All path operations use `Path.expanduser().resolve()`
+2. **No Pydantic**: Removed from dependencies (was unused); reduces install size
+3. **Loguru ERROR-only**: INFO/WARNING suppressed to prevent progress bar conflicts
+4. **PIL/Pillow only**: Use `Resampling.LANCZOS` (ANTIALIAS deprecated)
+5. **Pure pathlib**: All path operations use `resolve_path()` utility
 
 ## Testing Generated HTML
 
