@@ -1,6 +1,6 @@
 # Bingo Card Generator
 
-A customizable bingo card generator that creates interactive HTML bingo cards from CSV data with background images and celebration effects.
+A customizable bingo card generator that creates interactive HTML bingo cards from CSV data with background images and celebration effects. Now available as both a CLI tool and a Flask web application deployable on AWS free tier.
 
 ## Installation
 
@@ -48,6 +48,25 @@ create-spooky-bingo
 ```
 
 ## Running the Bingo Card Generator
+
+### Web Application (New!)
+
+You can now run the bingo card generator as a web application:
+
+```bash
+# Start the Flask web server
+uv run python app.py
+
+# Or using Flask directly
+uv run flask --app app run --host 0.0.0.0 --port 8080
+```
+
+Then visit `http://localhost:8080` in your browser to:
+- Select a theme (alien, ghost, thanksgiving, christmas, new_year)
+- Choose grid size (3x3, 5x5, 7x7)
+- Generate and play bingo cards directly in your browser
+
+### CLI Tool (Original)
 
 ### Using uv run (Recommended)
 
@@ -219,9 +238,78 @@ After generating your bingo cards, follow these steps to update the Google Sites
 4. **Update the 7×7 bingo card**
    - Repeat step 3 for the `bingo_7x7.html` file and the bigger bingo tab/element
 
+## AWS Deployment
+
+Deploy the web application to AWS free tier using Docker and EC2:
+
+### Prerequisites
+
+1. AWS CLI configured with appropriate permissions
+2. EC2 t2.micro instance with Docker installed
+3. ECR repository created
+4. Security group allowing inbound traffic on port 8080
+
+### Quick Deployment
+
+```bash
+# Make sure you're in the project directory
+cd bingo-app
+
+# Deploy via SSM Session Manager (recommended)
+./deploy.sh --ecr-repo YOUR_ECR_REPO_URI --instance-id i-1234567890abcdef0
+
+# Or deploy via SSH
+./deploy.sh --ecr-repo YOUR_ECR_REPO_URI --ssh-host ec2-user@YOUR_EC2_IP --ssh-key ~/.ssh/your-key.pem
+```
+
+### Environment Setup
+
+1. Copy the environment template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` with your AWS details:
+   ```bash
+   AWS_REGION=us-west-2
+   ECR_REPOSITORY_URI=123456789012.dkr.ecr.us-west-2.amazonaws.com/bingo-app
+   EC2_INSTANCE_ID=i-1234567890abcdef0
+   SECRET_KEY=your-secure-secret-key
+   ```
+
+3. Deploy:
+   ```bash
+   ./deploy.sh --ecr-repo $(grep ECR_REPOSITORY_URI .env | cut -d'=' -f2) --instance-id $(grep EC2_INSTANCE_ID .env | cut -d'=' -f2)
+   ```
+
+### Manual Docker Deployment
+
+If you prefer manual deployment:
+
+```bash
+# Build the image
+docker build -t bingo-app .
+
+# Run locally for testing
+docker run -p 8080:8080 bingo-app
+
+# Push to ECR and deploy to EC2
+# (See deploy.sh script for detailed commands)
+```
+
+## Architecture
+
+- **CLI Tool**: Original Python CLI using Click, Rich, and Questionary
+- **Web App**: Flask server that reuses CLI logic for bingo generation
+- **Themes**: 5 built-in themes with customizable colors, fonts, and emojis
+- **Templates**: Jinja2 templates for both HTML bingo cards and landing page
+- **Images**: Automatic processing and base64 embedding for self-contained HTML
+- **Deployment**: Dockerized for easy AWS deployment
+
 ## Notes
 
 - If you don't specify a tile size, the script will automatically generate both 5×5 and 7×7 cards
 - The FREE center option only works with odd-numbered tile sizes (5×5, 7×7, etc.)
 - Large background images (>250KB) will be automatically scaled down unless you use the `--no-down-scaling` option
 - Themes automatically set appropriate colors, fonts, and messages - you can still override the background color with `--background-color`
+- The web app maintains full backward compatibility with the CLI tool
