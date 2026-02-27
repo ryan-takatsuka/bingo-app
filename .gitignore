@@ -177,3 +177,5 @@ cython_debug/
 *.html
 
 .ruff_cache/
+bingo_5x5
+bingo_7x7

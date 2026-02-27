@@ -240,61 +240,121 @@ After generating your bingo cards, follow these steps to update the Google Sites
 
 ## AWS Deployment
 
-Deploy the web application to AWS free tier using Docker and EC2:
+Deploy the web application to AWS free tier using Docker on an EC2 t2.micro instance.
 
 ### Prerequisites
 
-1. AWS CLI configured with appropriate permissions
-2. EC2 t2.micro instance with Docker installed
-3. ECR repository created
-4. Security group allowing inbound traffic on port 8080
+- AWS CLI installed and configured (`aws configure`)
+- An SSH key pair for EC2 access
 
-### Quick Deployment
+### Step 1: Create AWS Infrastructure
 
 ```bash
-# Make sure you're in the project directory
-cd bingo-app
+# Set your region
+REGION=us-west-1
 
-# Deploy via SSM Session Manager (recommended)
-./deploy.sh --ecr-repo YOUR_ECR_REPO_URI --instance-id i-1234567890abcdef0
+# Create an EC2 key pair (save the .pem file securely)
+aws ec2 create-key-pair --key-name bingo-app-key --region $REGION \
+  --query 'KeyMaterial' --output text > ~/.ssh/bingo-app-key.pem
+chmod 600 ~/.ssh/bingo-app-key.pem
 
-# Or deploy via SSH
-./deploy.sh --ecr-repo YOUR_ECR_REPO_URI --ssh-host ec2-user@YOUR_EC2_IP --ssh-key ~/.ssh/your-key.pem
+# Create a security group (allow HTTP on 8080 and SSH)
+VPC_ID=$(aws ec2 describe-vpcs --region $REGION --query 'Vpcs[0].VpcId' --output text)
+SG_ID=$(aws ec2 create-security-group \
+  --group-name bingo-app-sg \
+  --description "Bingo App" \
+  --vpc-id $VPC_ID \
+  --region $REGION \
+  --query 'GroupId' --output text)
+aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 8080 --cidr 0.0.0.0/0 --region $REGION
+aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 22 --cidr 0.0.0.0/0 --region $REGION
+
+# Launch a t2.micro instance (free tier) with Docker pre-installed
+AMI_ID=$(aws ec2 describe-images --region $REGION --owners amazon \
+  --filters "Name=name,Values=al2023-ami-2023*-x86_64" "Name=state,Values=available" \
+  --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
+
+INSTANCE_ID=$(aws ec2 run-instances \
+  --image-id $AMI_ID \
+  --instance-type t2.micro \
+  --key-name bingo-app-key \
+  --security-group-ids $SG_ID \
+  --region $REGION \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=bingo-app}]' \
+  --user-data '#!/bin/bash
+yum update -y
+yum install -y docker
+systemctl start docker
+systemctl enable docker
+usermod -a -G docker ec2-user' \
+  --query 'Instances[0].InstanceId' --output text)
+
+# Wait for the instance to be ready
+aws ec2 wait instance-running --instance-ids $INSTANCE_ID --region $REGION
+PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --region $REGION \
+  --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+echo "Instance ready at: $PUBLIC_IP"
 ```
 
-### Environment Setup
-
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your AWS details:
-   ```bash
-   AWS_REGION=us-west-2
-   ECR_REPOSITORY_URI=123456789012.dkr.ecr.us-west-2.amazonaws.com/bingo-app
-   EC2_INSTANCE_ID=i-1234567890abcdef0
-   SECRET_KEY=your-secure-secret-key
-   ```
-
-3. Deploy:
-   ```bash
-   ./deploy.sh --ecr-repo $(grep ECR_REPOSITORY_URI .env | cut -d'=' -f2) --instance-id $(grep EC2_INSTANCE_ID .env | cut -d'=' -f2)
-   ```
-
-### Manual Docker Deployment
-
-If you prefer manual deployment:
+### Step 2: Deploy the App
 
 ```bash
-# Build the image
+# Wait ~60 seconds for Docker to install via user-data, then:
+
+# Copy project files to EC2
+rsync -avz --exclude='.venv' --exclude='__pycache__' --exclude='.git' \
+  -e "ssh -i ~/.ssh/bingo-app-key.pem -o StrictHostKeyChecking=no" \
+  . ec2-user@$PUBLIC_IP:~/bingo-app/
+
+# SSH in, build, and run
+ssh -i ~/.ssh/bingo-app-key.pem ec2-user@$PUBLIC_IP "
+  cd ~/bingo-app
+  sudo docker build -t bingo-app .
+  sudo docker run -d --name bingo-app --restart unless-stopped \
+    -p 8080:8080 -e FLASK_DEBUG=False -e PORT=8080 -e HOST=0.0.0.0 \
+    bingo-app
+"
+```
+
+The app will be available at `http://<PUBLIC_IP>:8080`
+
+### Step 3: Manage the Instance
+
+```bash
+# Stop the instance (to avoid charges when not in use)
+aws ec2 stop-instances --instance-ids $INSTANCE_ID --region $REGION
+
+# Start it again later (note: public IP will change unless you use an Elastic IP)
+aws ec2 start-instances --instance-ids $INSTANCE_ID --region $REGION
+
+# Re-deploy after code changes
+rsync -avz --exclude='.venv' --exclude='__pycache__' --exclude='.git' \
+  -e "ssh -i ~/.ssh/bingo-app-key.pem" . ec2-user@$PUBLIC_IP:~/bingo-app/
+ssh -i ~/.ssh/bingo-app-key.pem ec2-user@$PUBLIC_IP "
+  cd ~/bingo-app
+  sudo docker build -t bingo-app .
+  sudo docker stop bingo-app && sudo docker rm bingo-app
+  sudo docker run -d --name bingo-app --restart unless-stopped \
+    -p 8080:8080 -e FLASK_DEBUG=False bingo-app
+"
+
+# Terminate the instance entirely (deletes it)
+aws ec2 terminate-instances --instance-ids $INSTANCE_ID --region $REGION
+```
+
+### Optional: Custom Domain + HTTPS
+
+1. Allocate an **Elastic IP** (free while attached) so the IP survives reboots
+2. Register a domain via Route 53 or Cloudflare
+3. Point an A record to the Elastic IP
+4. Install nginx + Let's Encrypt on the EC2 for HTTPS
+
+### Local Docker Testing
+
+```bash
 docker build -t bingo-app .
-
-# Run locally for testing
 docker run -p 8080:8080 bingo-app
-
-# Push to ECR and deploy to EC2
-# (See deploy.sh script for detailed commands)
+# Visit http://localhost:8080
 ```
 
 ## Architecture
