@@ -11,7 +11,28 @@ from PIL.Image import Resampling
 ImageType = Literal["background", "h_bingo", "celebration"]
 
 
-def get_image_size_kb(img: Image.Image, format: str = "PNG") -> float:
+WEBP_QUALITY = 82
+WEBP_METHOD = 6
+
+
+def _save_webp(img: Image.Image, buffer: BytesIO) -> None:
+    """Save an image to a buffer as lossy WebP.
+
+    WebP lossy natively supports an alpha channel, so square-padded images keep
+    their transparency without needing the much larger lossless encoder. Quality
+    82/method 6 is a sweet spot between size and visible artifacts for both
+    photographic backgrounds and illustrated celebration art.
+    """
+    img.save(
+        buffer,
+        format="WEBP",
+        quality=WEBP_QUALITY,
+        method=WEBP_METHOD,
+        lossless=False,
+    )
+
+
+def get_image_size_kb(img: Image.Image, format: str = "WEBP") -> float:
     """Get the size of an image in kilobytes.
 
     Args:
@@ -22,13 +43,16 @@ def get_image_size_kb(img: Image.Image, format: str = "PNG") -> float:
         Size of the image in kilobytes.
     """
     buffer = BytesIO()
-    img.save(buffer, format=format)
+    if format.upper() == "WEBP":
+        _save_webp(img, buffer)
+    else:
+        img.save(buffer, format=format)
     size_bytes = len(buffer.getvalue())
     return size_bytes / 1024
 
 
 def scale_image_to_target_size(
-    img: Image.Image, target_size_kb: float = 250.0, format: str = "PNG"
+    img: Image.Image, target_size_kb: float = 250.0, format: str = "WEBP"
 ) -> Image.Image:
     """Scale an image down to meet a target file size in KB.
 
@@ -160,9 +184,9 @@ def process_image(
         if current_size_kb > actual_target_size_kb:
             square_img = scale_image_to_target_size(square_img, actual_target_size_kb)
 
-    # Encode to base64
+    # Encode to base64 WebP (smaller than PNG, supports transparency)
     buffer = BytesIO()
-    square_img.save(buffer, format="PNG")
+    _save_webp(square_img, buffer)
     buffer.seek(0)
     img_bytes = buffer.read()
 

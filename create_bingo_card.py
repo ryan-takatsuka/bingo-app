@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 
 import click
 import questionary
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
@@ -78,27 +78,16 @@ def load_bingo_data(csv_file_path: Path) -> list[str]:
         return unique_items
 
 
-def escape_quotes(items: list[str]) -> list[str]:
-    """Add escape character to quotes in strings so they are added properly to the HTML.
-
-    Args:
-        items: List of strings that may contain quotes.
-
-    Returns:
-        List of strings with escaped quotes.
-    """
-    return [item.replace('"', '\\"') for item in items]
-
-
 def load_jinja_template(template_path: Path | None = None) -> Template:
-    """Load the bingo Jinja template file.
+    """Load the bingo Jinja template file with HTML autoescaping enabled.
 
     Args:
         template_path: Path to the Jinja template file. If None, defaults to 'bingo.jinja'
             in the current directory.
 
     Returns:
-        Jinja Template object loaded from the template file.
+        Jinja Template object with autoescape enabled so user-supplied CSV values
+        cannot inject raw HTML or break out of JS string literals.
 
     Raises:
         FileNotFoundError: If the template file does not exist.
@@ -109,7 +98,11 @@ def load_jinja_template(template_path: Path | None = None) -> Template:
     if not template_path.exists():
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
-    return Template(template_path.read_text(encoding="utf-8"))
+    env = Environment(
+        loader=FileSystemLoader(str(template_path.parent)),
+        autoescape=select_autoescape(enabled_extensions=("jinja", "html"), default=True),
+    )
+    return env.get_template(template_path.name)
 
 
 def get_random_bingo_items(
@@ -223,7 +216,7 @@ def generate_bingo_html_card(
     # Build template data dictionary
     template_data = {
         "initial_items": initial_items,
-        "all_bingo_items": escape_quotes(all_bingo_items),
+        "all_bingo_items": all_bingo_items,
         "image": image_encoding,
         "h_bingo_image": h_bingo_image_encoding,
         "bingo_image": bingo_image_encoding,

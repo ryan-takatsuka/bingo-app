@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo</title> <!-- Changed from {{ title }} -->
+    <title>Bingo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     {% if theme %}
@@ -48,11 +48,22 @@
             --base-tile-font-size: calc((1em / {{ initial_items|length }}) * 5);
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        body, button, h1, h2, h3, p, div {
             margin: 0;
             padding: 0;
-            transition: background-color 0.3s, color 0.3s;
         }
 
         @keyframes hoverEffect {
@@ -240,18 +251,19 @@
         }
 
         .bingo-container {
+            /* Fixed-aspect square sized against whichever is smallest:
+               the available width, the available height minus control chrome,
+               or the 800px max. flex-shrink:0 keeps the flex column from
+               squishing it in tall/short iframes. */
             position: relative;
-            flex: 1;
-            width: min(80vw, 80vh); /* Use the smaller of viewport width or height */
-            height: min(80vw, 80vh); /* Same as width to ensure square */
-            max-width: 800px;
-            max-height: 800px;
+            width: min(100%, calc(100vh - 90px), 800px);
+            aspect-ratio: 1 / 1;
+            flex-shrink: 0;
             margin: 0 auto;
             overflow: hidden;
             border: 2px solid var(--primary-color);
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--neon-glow);
-            /* Add perspective for 3D effect */
             perspective: 1000px;
             display: flex;
             justify-content: center;
@@ -266,7 +278,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("data:image/png;base64,{{ image }}");
+            background-image: url("data:image/webp;base64,{{ image }}");
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -344,25 +356,44 @@
             perspective: 1000px;
         }
 
-        .bingo-tile:hover {
-            transform: rotateX(-15deg) rotateY(15deg) scale(1.02);
-            border-color: var(--secondary-color);
-            animation: borderPulse 1.5s ease-in-out infinite;
-            z-index: 10;
+        .bingo-tile:focus {
+            outline: none;
         }
 
-        .bingo-tile:hover::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color), var(--accent-color));
-            border-radius: inherit;
-            z-index: -1;
-            filter: blur(8px);
-            animation: rotateGradient 3s linear infinite;
+        .bingo-tile:focus-visible {
+            outline: 3px solid var(--secondary-color);
+            outline-offset: 2px;
+            z-index: 11;
+        }
+
+        /* Gate fancy hover effects behind real pointers so phones don't
+           get a stuck hover state on first tap. */
+        @media (hover: hover) and (pointer: fine) {
+            .bingo-tile:hover {
+                transform: rotateX(-15deg) rotateY(15deg) scale(1.02);
+                border-color: var(--secondary-color);
+                z-index: 10;
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                .bingo-tile:hover {
+                    animation: borderPulse 1.5s ease-in-out infinite;
+                }
+
+                .bingo-tile:hover::before {
+                    content: '';
+                    position: absolute;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
+                    background: linear-gradient(45deg, var(--secondary-color), var(--primary-color), var(--accent-color));
+                    border-radius: inherit;
+                    z-index: -1;
+                    filter: blur(8px);
+                    animation: rotateGradient 3s linear infinite;
+                }
+            }
         }
 
         @keyframes rotateGradient {
@@ -453,7 +484,7 @@
             display: none;
             text-align: center;
             font-family: {% if theme %}'{{ theme.fonts.primary }}'{% else %}'Orbitron'{% endif %}, sans-serif;
-            box-shadow: 0 0 15px var(--neon_glow);
+            box-shadow: 0 0 15px var(--neon-glow);
         }
 
         /* Responsive design improvements */
@@ -599,17 +630,23 @@
             z-index: 5;
         }
 
-        /* Bingo celebration effects */
+        /* Winning-tile pulse — animates only compositor-cheap properties
+           (box-shadow + outline) so it doesn't stomp on the revealed flip transform. */
         @keyframes winningTilePulse {
-            0% { transform: scale(1); box-shadow: 0 0 10px var(--neon-glow); }
-            50% { transform: scale(1.1); box-shadow: 0 0 30px var(--secondary-color); }
-            100% { transform: scale(1); box-shadow: 0 0 10px var(--neon-glow); }
+            0%, 100% { box-shadow: 0 0 10px var(--neon-glow); outline-color: var(--secondary-color); }
+            50%      { box-shadow: 0 0 30px var(--secondary-color); outline-color: var(--primary-color); }
         }
 
         .winning-tile {
-            animation: winningTilePulse 1s infinite;
-            border: 2px solid var(--secondary-color) !important;
+            outline: 3px solid var(--secondary-color);
+            outline-offset: -2px;
             z-index: 10 !important;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .winning-tile {
+                animation: winningTilePulse 1s infinite;
+            }
         }
 
         .bingo-celebration {
@@ -652,14 +689,20 @@
 
         .bingo-message {
             font-family: {% if theme %}'{{ theme.fonts.accent }}'{% else %}'Audiowide'{% endif %}, cursive;
-            font-size: 5rem;
+            font-size: clamp(2rem, 8vmin, 5rem);
             color: var(--secondary-color);
             text-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
-            animation: neonPulse 1s infinite;
             text-align: center;
-            transform: rotate(-10deg);
+            transform: rotate(-6deg);
             z-index: 10;
             position: relative;
+            padding: 0 0.5em;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .bingo-message {
+                animation: neonPulse 1s infinite;
+            }
         }
 
         /* First bingo celebration */
@@ -788,14 +831,20 @@
 
         .h-bingo-message {
             font-family: {% if theme %}'{{ theme.fonts.accent }}'{% else %}'Audiowide'{% endif %}, cursive;
-            font-size: 5rem;
+            font-size: clamp(2rem, 8vmin, 5rem);
             color: var(--secondary-color);
             text-shadow: 0 0 20px var(--neon-glow), 0 0 40px var(--neon-glow);
-            animation: neonPulse 1s infinite;
             text-align: center;
-            transform: rotate(-10deg);
+            transform: rotate(-6deg);
             z-index: 10;
             position: relative;
+            padding: 0 0.5em;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .h-bingo-message {
+                animation: neonPulse 1s infinite;
+            }
         }
 
         @keyframes hBackgroundPulse {
@@ -904,11 +953,11 @@
             <div class="bingo-card" id="bingo-card">
                 {% for row in initial_items %}
                     {% for cell in row %}
-                    <div class="bingo-tile">
-                        <div class="tile-front">
+                    <div class="bingo-tile" role="button" tabindex="0" aria-pressed="false" aria-label="{{ cell }}">
+                        <div class="tile-front" aria-hidden="true">
                             <span class="tile-text">{{ cell }}</span>
                         </div>
-                        <div class="tile-back">
+                        <div class="tile-back" aria-hidden="true">
                             <span class="tile-text">{{ cell }}</span>
                         </div>
                     </div>
@@ -950,12 +999,8 @@
     </div>
 
     <script>
-        // Bingo values pool
-        const valuePool = [
-            {% for item in all_bingo_items %}
-                "{{ item }}",
-            {% endfor %}
-        ];
+        // Bingo values pool (JSON-safe; autoescaped on render)
+        const valuePool = {{ all_bingo_items|tojson }};
 
         // Track the grid size and revealed tiles
         const GRID_SIZE = {{ initial_items|length }};
@@ -982,28 +1027,21 @@
 
         // Reset tiles to unrevealed state without changing their content
         function resetTiles() {
-            // Cancel any active celebrations first
             cancelActiveCelebration();
-            
-            // Show abduction effect
             showAbduction();
 
-            // Get all tiles
             const tiles = document.querySelectorAll('.bingo-tile');
 
-            // Reset celebration flags
             firstBingoTriggered = false;
             doubleBingoTriggered = false;
             allRevealedTriggered = false;
             hBingoTriggered = false;
             previousWinningLines = [];
 
-            // Flip all tiles back to unrevealed state
             tiles.forEach(tile => {
                 tile.classList.remove('revealed');
+                tile.setAttribute('aria-pressed', 'false');
             });
-
-            // No state saving needed
         }
 
         // Create star background
@@ -1078,13 +1116,28 @@
             // Clear all active timeouts
             activeCelebrationTimeouts.forEach(timeout => clearTimeout(timeout));
             activeCelebrationTimeouts = [];
-            
-            // Immediately hide all celebration overlays
-            document.getElementById('bingo-celebration').style.opacity = '0';
-            document.getElementById('double-bingo-celebration').style.opacity = '0';
-            document.getElementById('complete-celebration').style.opacity = '0';
-            document.getElementById('h-bingo-celebration').style.opacity = '0';
-            document.getElementById('h-background').style.opacity = '0';
+
+            // Immediately hide all celebration overlays — bypass the opacity
+            // transition so clicking during a celebration feels like an interrupt,
+            // not a slow fade. We remove the transition, snap to 0, force a reflow,
+            // then restore the transition for the next natural end-of-celebration fade.
+            const overlayIds = [
+                'bingo-celebration',
+                'double-bingo-celebration',
+                'complete-celebration',
+                'h-bingo-celebration',
+                'h-background',
+            ];
+            overlayIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.style.transition = 'none';
+                el.style.opacity = '0';
+                void el.offsetHeight; // force reflow
+                el.style.transition = '';
+            });
+            // Also nuke any already-rendered confetti mid-flight
+            document.querySelectorAll('.confetti').forEach(c => c.remove());
             
             // Remove all winning tile highlights
             document.querySelectorAll('.winning-tile').forEach(tile => {
@@ -1139,13 +1192,13 @@
             imageWrapper.innerHTML = '';
             const image = document.createElement('img');
             image.className = 'celebration-image';
-            image.src = "data:image/png;base64,{{ bingo_image }}";
+            image.src = "data:image/webp;base64,{{ bingo_image }}";
             image.alt = "Bingo Celebration";
             imageWrapper.appendChild(image);
 
-            // Create alien confetti
-            for (let i = 0; i < 30; i++) {
-                setTimeout(() => createAlienConfetti(), i * 100);
+            // Create alien confetti (capped)
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => createAlienConfetti(), i * 120);
             }
 
             // Hide celebration and reset UI effects after 5 seconds
@@ -1201,13 +1254,13 @@
             imageWrapper.innerHTML = '';
             const image = document.createElement('img');
             image.className = 'celebration-image';
-            image.src = "data:image/png;base64,{{ double_bingo_image }}";
+            image.src = "data:image/webp;base64,{{ double_bingo_image }}";
             image.alt = "Double Bingo Celebration";
             imageWrapper.appendChild(image);
 
-            // Create alien confetti
-            for (let i = 0; i < 40; i++) {
-                setTimeout(() => createAlienConfetti(), i * 100);
+            // Create alien confetti (capped)
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => createAlienConfetti(), i * 120);
             }
 
             // Hide celebration and reset UI effects after 6 seconds
@@ -1257,7 +1310,7 @@
             mothershipContainer.innerHTML = '';
             const mothership = document.createElement('img');
             mothership.className = 'mothership';
-            mothership.src = "data:image/png;base64,{{ super_bingo_image }}";
+            mothership.src = "data:image/webp;base64,{{ super_bingo_image }}";
             mothership.alt = "Super Bingo Celebration";
             mothershipContainer.appendChild(mothership);
 
@@ -1271,9 +1324,9 @@
                 celebration.appendChild(alien);
             }
 
-            // Create alien confetti
-            for (let i = 0; i < 60; i++) {
-                setTimeout(() => createAlienConfetti(), i * 100);
+            // Create alien confetti (capped to keep mobile smooth)
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => createAlienConfetti(), i * 120);
             }
 
             // Hide celebration and reset UI effects after 8 seconds
@@ -1396,13 +1449,13 @@
             // Add the custom H-bingo image
             const hImage = document.createElement('img');
             hImage.className = 'h-image';
-            hImage.src = "data:image/png;base64,{{ h_bingo_image }}";
+            hImage.src = "data:image/webp;base64,{{ h_bingo_image }}";
             hImage.alt = "H Bingo Celebration";
             imageWrapper.appendChild(hImage);
 
-            // Create alien confetti
-            for (let i = 0; i < 50; i++) {
-                setTimeout(() => createAlienConfetti(), i * 100);
+            // Create alien confetti (capped)
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => createAlienConfetti(), i * 120);
             }
 
             // Hide celebration and reset UI effects after 6 seconds
@@ -1549,17 +1602,48 @@
         }
 
 
-        // Toggle reveal state of a tile
+        // Toggle reveal state of a tile.
+        // If a celebration is currently playing, clicking anywhere cancels it
+        // immediately so the user can keep playing without waiting out the animation.
         function toggleReveal(tile) {
-            tile.classList.toggle('revealed');
+            if (currentCelebration) {
+                cancelActiveCelebration();
+            }
 
-            // Create an abduction effect on reveal
+            const revealed = tile.classList.toggle('revealed');
+            tile.setAttribute('aria-pressed', revealed ? 'true' : 'false');
+
             showAbduction();
-
-            // Check for bingo and all revealed with priority
             checkForBingoWithPriority();
+        }
 
-            // No state saving needed
+        // Shrink-to-fit each tile's text in a single pass to avoid layout thrashing.
+        // Three phases: clear all overrides, batch-read dimensions, batch-write new sizes.
+        // This forces at most one layout recalc per call instead of thousands.
+        function fitTileText() {
+            const texts = document.querySelectorAll('.bingo-tile .tile-text');
+            if (texts.length === 0) return;
+            // Phase 1: clear any prior overrides (write-only pass).
+            texts.forEach(el => { el.style.fontSize = ''; });
+            // Phase 2: measure everything (read-only pass — triggers one layout total).
+            const MIN = 6;
+            const SAFETY = 0.92;
+            const plan = [];
+            texts.forEach(el => {
+                const parent = el.parentElement;
+                const maxW = parent.clientWidth - 4;
+                const maxH = parent.clientHeight - 4;
+                if (maxW <= 0 || maxH <= 0) return;
+                const sw = el.scrollWidth;
+                const sh = el.scrollHeight;
+                if (sw <= maxW && sh <= maxH) return;
+                const current = parseFloat(getComputedStyle(el).fontSize) || 16;
+                const ratio = Math.min(maxW / sw, maxH / sh);
+                const next = Math.max(MIN, current * ratio * SAFETY);
+                plan.push([el, next]);
+            });
+            // Phase 3: apply (write-only pass).
+            for (const [el, size] of plan) el.style.fontSize = size + 'px';
         }
 
         // Randomize bingo card with values from the pool
@@ -1589,54 +1673,58 @@
                 return;
             }
 
-            // Shuffle the value pool
-            const shuffledValues = [...valuePool].sort(() => Math.random() - 0.5);
+            // Shuffle the value pool (Fisher-Yates — unbiased)
+            const shuffledValues = [...valuePool];
+            for (let i = shuffledValues.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledValues[i], shuffledValues[j]] = [shuffledValues[j], shuffledValues[i]];
+            }
 
             // Reset all tiles to non-revealed state
             tiles.forEach(tile => {
                 tile.classList.remove('revealed');
+                tile.setAttribute('aria-pressed', 'false');
             });
 
-            // Animate and assign values to tiles with delay
+            // Assign values to all tiles synchronously so fitTileText can run once,
+            // then trigger a subtle staggered fade-in via CSS-friendly opacity toggles.
             tiles.forEach((tile, index) => {
                 const frontText = tile.querySelector('.tile-front .tile-text');
                 const backText = tile.querySelector('.tile-back .tile-text');
-
-                // Update text on both sides
-                setTimeout(() => {
-                    frontText.textContent = shuffledValues[index];
-                    backText.textContent = shuffledValues[index];
-
-                    // No state saving needed
-                }, 50 * index);
+                frontText.textContent = shuffledValues[index];
+                backText.textContent = shuffledValues[index];
+                tile.setAttribute('aria-label', shuffledValues[index]);
             });
+
+            // One shrink-to-fit pass right after text assignment — cheap and immediate.
+            requestAnimationFrame(fitTileText);
         }
 
         // Initialize the app
         function init() {
-            // Add event listeners for tiles
             document.querySelectorAll('.bingo-tile').forEach(tile => {
                 tile.addEventListener('click', () => toggleReveal(tile));
+                // Keyboard activation for role="button" divs — Enter + Space.
+                tile.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                        e.preventDefault();
+                        toggleReveal(tile);
+                    }
+                });
             });
 
-            // Add event listener for randomize button
             document.getElementById('randomize').addEventListener('click', randomizeBingoCard);
-
-            // Add event listener for reset button - now just resets tiles without re-randomizing
             document.getElementById('reset').addEventListener('click', resetTiles);
 
-
-
-            // Create stars
             createStars();
-
-            // Always randomize the board on initialization
             randomizeBingoCard();
 
-            // Handle window resize
+            // Debounced resize — stars use vw/vh so no need to recreate them;
+            // we only re-fit tile text when the iframe actually changes size.
+            let resizeTimer;
             window.addEventListener('resize', function() {
-                // Adjust any elements that need to be responsive to embedded environment
-                createStars();
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(fitTileText, 120);
             });
         }
 
