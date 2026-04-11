@@ -630,22 +630,26 @@
             z-index: 5;
         }
 
-        /* Winning-tile pulse — animates only compositor-cheap properties
-           (box-shadow + outline) so it doesn't stomp on the revealed flip transform. */
+        /* Winning-tile pulse — uses the individual `scale` property (not
+           transform: scale()) so it composes with the revealed tile's
+           transform: rotateY(180deg) instead of overriding it. This keeps
+           the animation compositor-only — no repaints per frame. */
         @keyframes winningTilePulse {
-            0%, 100% { box-shadow: 0 0 10px var(--neon-glow); outline-color: var(--secondary-color); }
-            50%      { box-shadow: 0 0 30px var(--secondary-color); outline-color: var(--primary-color); }
+            0%, 100% { scale: 1;    }
+            50%      { scale: 1.08; }
         }
 
         .winning-tile {
             outline: 3px solid var(--secondary-color);
             outline-offset: -2px;
+            box-shadow: 0 0 20px var(--secondary-color);
             z-index: 10 !important;
         }
 
         @media (prefers-reduced-motion: no-preference) {
             .winning-tile {
-                animation: winningTilePulse 1s infinite;
+                animation: winningTilePulse 1s ease-in-out infinite;
+                will-change: scale;
             }
         }
 
